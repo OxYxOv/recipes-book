@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Книга рецептов</string>
+    <string name="home">Главная</string>
+    <string name="catalog">Каталог</string>
+    <string name="add_recipe">Добавить рецепт</string>
+    <string name="profile">Профиль</string>
+    <string name="search">Поиск</string>
+    <string name="search_recipes">Поиск рецептов...</string>
+    <string name="categories">Категории</string>
+    <string name="popular_recipes">Популярные рецепты</string>
+    <string name="recipe_name">Название рецепта</string>
+    <string name="ingredients">Ингредиенты</string>
+    <string name="instructions">Инструкции</string>
+    <string name="cooking_time">Время приготовления</string>
+    <string name="difficulty">Сложность</string>
+    <string name="easy">Легко</string>
+    <string name="medium">Средне</string>
+    <string name="hard">Сложно</string>
+    <string name="save">Сохранить</string>
+    <string name="cancel">Отмена</string>
+    <string name="login">Войти</string>
+    <string name="register">Регистрация</string>
+    <string name="email">Email</string>
+    <string name="password">Пароль</string>
+    <string name="username">Имя пользователя</string>
+    <string name="logout">Выйти</string>
+    <string name="favorites">Избранное</string>
+    <string name="no_recipes_found">Рецепты не найдены</string>
+    <string name="error_loading">Ошибка загрузки</string>
+    <string name="category">Категория</string>
+    <string name="servings">Порции</string>
+    <string name="minutes">мин</string>
+</resources>
