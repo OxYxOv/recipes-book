@@ -12,6 +12,7 @@ import com.example.recipes.data.local.RecipeDatabase
 import com.example.recipes.data.model.Recipe
 import com.example.recipes.ui.navigation.AppNavigation
 import com.example.recipes.ui.theme.RecipesBookTheme
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
@@ -39,10 +40,7 @@ class MainActivity : ComponentActivity() {
             val dao = db.recipeDao()
 
             // Check if database is empty
-            var hasRecipes = false
-            dao.getAllRecipes().collect { recipes ->
-                hasRecipes = recipes.isNotEmpty()
-            }
+            val hasRecipes = dao.getAllRecipes().first().isNotEmpty()
 
             if (!hasRecipes) {
                 // Add sample recipes

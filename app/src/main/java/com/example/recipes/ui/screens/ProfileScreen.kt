@@ -215,7 +215,7 @@ fun LoginRegisterView(onLogin: (String, String) -> Unit) {
             },
             modifier = Modifier.fillMaxWidth(),
             enabled = email.isNotBlank() && password.isNotBlank() &&
-                    (!isLogin || username.isNotBlank() || isLogin)
+                    (isLogin || username.isNotBlank())
         ) {
             Text(if (isLogin) "Войти" else "Зарегистрироваться")
         }
