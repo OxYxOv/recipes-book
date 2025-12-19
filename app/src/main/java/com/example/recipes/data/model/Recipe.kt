@@ -14,8 +14,8 @@ data class Recipe(
     val instructions: String,
     val imageUrl: String? = null,
     val category: String,
-    val cookingTime: Int, // in minutes
-    val difficulty: String, // easy, medium, hard
+    val cookingTime: Int,
+    val difficulty: String,
     val servings: Int = 1,
     val isFavorite: Boolean = false,
     val isLocal: Boolean = true,
