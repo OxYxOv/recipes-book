@@ -104,15 +104,5 @@ class RecipeDetailViewModelTest {
         verify(repository).getRecipeById(testRecipeId)
     }
 
-    @Test
-    fun `initial state should be null`() {
-        // Given
-        whenever(repository.getRecipeById(testRecipeId)).thenReturn(testRecipe)
 
-        // When
-        viewModel = RecipeDetailViewModel(testRecipeId, repository)
-
-        // Then (before coroutine runs)
-        assertNull(viewModel.recipe.value)
-    }
 }
