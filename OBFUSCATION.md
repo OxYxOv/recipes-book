@@ -86,6 +86,25 @@ debug {
 }
 ```
 
+### Debug Builds
+```kotlin
+debug {
+    // Enable obfuscation in debug builds too for testing
+    // NOTE: This slows down development builds significantly
+    // For daily development, set isMinifyEnabled = false
+    isMinifyEnabled = true
+    isShrinkResources = false
+    proguardFiles(
+        getDefaultProguardFile("proguard-android-optimize.txt"),
+        "proguard-rules.pro"
+    )
+}
+```
+**Recommendation**: Disable obfuscation in debug builds during active development:
+```kotlin
+isMinifyEnabled = false  // For faster builds during development
+```
+
 ### Release Builds
 ```kotlin
 release {

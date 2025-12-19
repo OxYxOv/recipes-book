@@ -23,7 +23,8 @@ android {
 
     buildTypes {
         debug {
-            // Enable obfuscation in debug builds too for testing
+            // Enable obfuscation in debug builds too for comprehensive testing
+            // NOTE: This slows down development builds. For daily development, set to false
             isMinifyEnabled = true
             isShrinkResources = false
             proguardFiles(
