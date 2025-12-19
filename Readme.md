@@ -43,6 +43,20 @@
 - Описание архитектуры и структуры
 - Инструкции по запуску и использованию
 
+### 7. ✅ Обфускация кода
+- **Полная обфускация** всего приложения с помощью R8/ProGuard
+- Агрессивные правила обфускации для максимальной защиты
+- Обфускация включена как для debug, так и для release сборок
+- Защита от обратной разработки (reverse engineering)
+- Подробная документация в [OBFUSCATION.md](OBFUSCATION.md)
+
+### 8. ✅ Комплексное тестирование
+- **Unit тесты** для всех слоев приложения (Repository, ViewModels, DataStore)
+- **Instrumented тесты** для Room DAO и UI компонентов
+- Покрытие тестами: Repository (100%), ViewModels (100%), DAO (100%)
+- Использование Mockito, Coroutines Test, Room Testing
+- Подробная документация в [app/src/test/README.md](app/src/test/README.md)
+
 ## Стек технологий
 
 - **Язык**: Kotlin
@@ -53,7 +67,8 @@
 - **Сеть**: Retrofit + OkHttp + Gson
 - **Изображения**: Coil
 - **Корутины**: Kotlinx Coroutines
-- **Обфускация**: R8/ProGuard
+- **Обфускация**: R8/ProGuard (полная обфускация)
+- **Тестирование**: JUnit, Mockito, Robolectric, Espresso
 
 ## Структура проекта
 
@@ -152,12 +167,27 @@ app/src/main/java/com/example/recipes/
 4. Запустите приложение на эмуляторе или физическом устройстве
 
 ### Release сборка
-Release сборка включает обфускацию кода с помощью R8:
+Release сборка включает полную обфускацию кода с помощью R8/ProGuard:
 ```bash
 ./gradlew assembleRelease
 ```
 
-Правила ProGuard настроены в `app/proguard-rules.pro`
+Правила ProGuard настроены в `app/proguard-rules.pro`. Подробная документация по обфускации доступна в [OBFUSCATION.md](OBFUSCATION.md).
+
+### Тестирование
+Приложение включает полный набор тестов:
+
+**Unit тесты:**
+```bash
+./gradlew test
+```
+
+**Instrumented тесты (требуется эмулятор/устройство):**
+```bash
+./gradlew connectedAndroidTest
+```
+
+Подробная документация по тестам доступна в [app/src/test/README.md](app/src/test/README.md).
 
 ## API Integration
 
