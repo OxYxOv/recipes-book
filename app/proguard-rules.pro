@@ -149,9 +149,12 @@
 # JETPACK COMPOSE
 # ============================================================================
 
-# Keep Compose Compiler
--keep class androidx.compose.** { *; }
--keep interface androidx.compose.** { *; }
+# Keep Compose Runtime and essential components
+-keep class androidx.compose.runtime.** { *; }
+-keep class androidx.compose.ui.platform.** { *; }
+-keep class androidx.compose.ui.graphics.** { *; }
+-keep class androidx.compose.foundation.** { *; }
+-keep interface androidx.compose.runtime.** { *; }
 -dontwarn androidx.compose.**
 
 # Keep Composable functions metadata
@@ -160,8 +163,8 @@
 }
 
 # Navigation Compose
--keep class androidx.navigation.** { *; }
--keepnames class androidx.navigation.** { *; }
+-keep class androidx.navigation.compose.** { *; }
+-keepnames class androidx.navigation.NavBackStackEntry
 
 # ============================================================================
 # DATASTORE
