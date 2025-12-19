@@ -76,12 +76,21 @@
 # DATA MODELS - KEEP FOR SERIALIZATION
 # ============================================================================
 
-# Keep all data model classes for Gson/Room serialization
--keep class com.example.recipes.data.model.** { *; }
--keepclassmembers class com.example.recipes.data.model.** { *; }
+# Keep specific data model classes for Gson/Room serialization
+# Recipe is a Room entity and used in API, must keep all fields
+-keep class com.example.recipes.data.model.Recipe { *; }
+
+# User is used for API serialization, keep all fields
+-keep class com.example.recipes.data.model.User { *; }
+
+# Category is a simple data class, can allow selective obfuscation
+-keepclassmembers class com.example.recipes.data.model.Category {
+    <fields>;
+    <init>(...);
+}
 
 # Keep Room entities and DAOs
--keep @androidx.room.Entity class *
+-keep @androidx.room.Entity class * { *; }
 -keep @androidx.room.Dao class * { *; }
 -keep @androidx.room.Database class * { *; }
 
