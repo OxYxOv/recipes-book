@@ -102,6 +102,11 @@ fun HomeScreen(
             )
         )
     }
+    val categoryAnchors = remember(orderedRecipes) {
+        orderedRecipes.withIndex()
+            .groupBy({ it.value.category }, { it.index })
+            .mapValues { entry -> entry.value.minOrNull() ?: 0 }
+    }
     val firstVisibleCategory by remember {
         derivedStateOf {
             orderedRecipes.getOrNull(listState.firstVisibleItemIndex)?.category ?: highlightedCategory
@@ -180,8 +185,8 @@ fun HomeScreen(
                     onClick = {
                         selectedCategory = category.id
                         if (category.id != "all") {
-                            val targetIndex = orderedRecipes.indexOfFirst { it.category == category.id }
-                            if (targetIndex in orderedRecipes.indices) {
+                            val targetIndex = categoryAnchors[category.id]
+                            if (targetIndex != null && targetIndex in orderedRecipes.indices) {
                                 scope.launch { listState.animateScrollToItem(targetIndex, scrollOffset = 0) }
                             }
                         }

@@ -86,7 +86,9 @@ interface RecipeDao {
         """
         SELECT COUNT(*) > 0 FROM recipes 
         WHERE (ownerId IS NULL OR (:userId IS NOT NULL AND ownerId = :userId))
-        AND (:userId IS NULL OR id NOT IN (SELECT recipeId FROM hidden_recipes WHERE userId = :userId))
+        AND (:userId IS NULL OR NOT EXISTS (
+            SELECT 1 FROM hidden_recipes WHERE userId = :userId AND recipeId = recipes.id
+        ))
         """
     )
     suspend fun hasRecipes(userId: String?): Boolean

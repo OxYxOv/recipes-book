@@ -34,6 +34,7 @@ abstract class RecipeDatabase : RoomDatabase() {
                 )
             }
         }
+        // Normalize the hidden_recipes table created in v3 to include the foreign key constraint
         private val MIGRATION_3_4 = object : Migration(3, 4) {
             override fun migrate(database: SupportSQLiteDatabase) {
                 database.execSQL(
