@@ -93,8 +93,9 @@ fun RecipeDetailScreen(
                         if (isLoggedIn && !userEmail.isNullOrBlank() &&
                             (r.ownerId == null || r.ownerId == userEmail)
                         ) {
+                            val deleteDescription = if (r.ownerId == null) "Скрыть рецепт" else "Удалить рецепт"
                             IconButton(onClick = { showDeleteDialog = true }) {
-                                Icon(Icons.Default.Delete, contentDescription = "Удалить или скрыть рецепт")
+                                Icon(Icons.Default.Delete, contentDescription = deleteDescription)
                             }
                         }
                     }
