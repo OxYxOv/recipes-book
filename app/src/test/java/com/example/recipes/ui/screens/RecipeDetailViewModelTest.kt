@@ -13,6 +13,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.mockito.Mock
 import org.mockito.MockitoAnnotations
+import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 
@@ -28,6 +29,7 @@ class RecipeDetailViewModelTest {
     private lateinit var repository: RecipeRepository
 
     private lateinit var viewModel: RecipeDetailViewModel
+    private val userId = "user@test.com"
 
     private val testRecipeId = 1L
     private val testRecipe = Recipe(
@@ -57,60 +59,60 @@ class RecipeDetailViewModelTest {
     @Test
     fun `init should load recipe`() = runTest {
         // Given
-        whenever(repository.getRecipeById(testRecipeId)).thenReturn(testRecipe)
+        whenever(repository.getRecipeById(testRecipeId, userId)).thenReturn(testRecipe)
 
         // When
-        viewModel = RecipeDetailViewModel(testRecipeId, repository)
+        viewModel = RecipeDetailViewModel(testRecipeId, repository, userId)
         advanceUntilIdle()
 
         // Then
         assertEquals(testRecipe, viewModel.recipe.value)
-        verify(repository).getRecipeById(testRecipeId)
+        verify(repository).getRecipeById(testRecipeId, userId)
     }
 
     @Test
     fun `init should set null when recipe not found`() = runTest {
         // Given
-        whenever(repository.getRecipeById(testRecipeId)).thenReturn(null)
+        whenever(repository.getRecipeById(testRecipeId, userId)).thenReturn(null)
 
         // When
-        viewModel = RecipeDetailViewModel(testRecipeId, repository)
+        viewModel = RecipeDetailViewModel(testRecipeId, repository, userId)
         advanceUntilIdle()
 
         // Then
         assertNull(viewModel.recipe.value)
-        verify(repository).getRecipeById(testRecipeId)
+        verify(repository).getRecipeById(testRecipeId, userId)
     }
 
     @Test
     fun `toggleFavorite should update favorite status and reload`() = runTest {
         // Given
         val isFavorite = true
-        whenever(repository.getRecipeById(testRecipeId)).thenReturn(testRecipe)
+        whenever(repository.getRecipeById(testRecipeId, userId)).thenReturn(testRecipe)
         
-        viewModel = RecipeDetailViewModel(testRecipeId, repository)
+        viewModel = RecipeDetailViewModel(testRecipeId, repository, userId)
         advanceUntilIdle()
 
         val updatedRecipe = testRecipe.copy(isFavorite = true)
-        whenever(repository.getRecipeById(testRecipeId)).thenReturn(updatedRecipe)
+        whenever(repository.getRecipeById(testRecipeId, userId)).thenReturn(updatedRecipe)
 
         // When
         viewModel.toggleFavorite(isFavorite)
         advanceUntilIdle()
 
         // Then
-        verify(repository).toggleFavorite(testRecipeId, isFavorite)
+        verify(repository).toggleFavorite(userId, testRecipeId, isFavorite)
         // getRecipeById should be called twice: init and after toggle
-        verify(repository).getRecipeById(testRecipeId)
+        verify(repository, times(2)).getRecipeById(testRecipeId, userId)
     }
 
     @Test
     fun `initial state should be null`() {
         // Given
-        whenever(repository.getRecipeById(testRecipeId)).thenReturn(testRecipe)
+        whenever(repository.getRecipeById(testRecipeId, userId)).thenReturn(testRecipe)
 
         // When
-        viewModel = RecipeDetailViewModel(testRecipeId, repository)
+        viewModel = RecipeDetailViewModel(testRecipeId, repository, userId)
 
         // Then (before coroutine runs)
         assertNull(viewModel.recipe.value)

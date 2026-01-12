@@ -5,19 +5,24 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.recipes.data.local.RecipeDatabase
+import com.example.recipes.data.local.UserPreferencesManager
 import com.example.recipes.data.model.Category
 import com.example.recipes.data.remote.RetrofitClient
 import com.example.recipes.data.repository.RecipeRepository
@@ -51,6 +56,37 @@ fun HomeScreen(
     var selectedCategory by remember { mutableStateOf("all") }
     var searchQuery by remember { mutableStateOf("") }
     val scope = rememberCoroutineScope()
+    val focusManager = LocalFocusManager.current
+    val focusRequester = remember { androidx.compose.ui.focus.FocusRequester() }
+    val listState = rememberLazyListState()
+    val preferencesManager = remember { UserPreferencesManager(LocalContext.current) }
+    val isLoggedIn by preferencesManager.isLoggedIn.collectAsState(initial = false)
+    val userEmail by preferencesManager.userEmail.collectAsState(initial = null)
+    var showAuthDialog by remember { mutableStateOf(false) }
+
+    val orderedRecipes = remember(recipes, categories) {
+        val order = categories.map { it.id }
+        recipes.sortedWith(
+            compareBy({ order.indexOf(it.category).takeIf { idx -> idx >= 0 } ?: Int.MAX_VALUE }, { it.id * -1 })
+        )
+    }
+    val firstVisibleCategory by remember {
+        derivedStateOf {
+            orderedRecipes.getOrNull(listState.firstVisibleItemIndex)?.category ?: selectedCategory
+        }
+    }
+
+    LaunchedEffect(firstVisibleCategory) {
+        selectedCategory = firstVisibleCategory
+    }
+
+    LaunchedEffect(userEmail) {
+        if (selectedCategory == "all") {
+            viewModel.loadAllRecipes(userEmail)
+        } else {
+            viewModel.loadRecipesByCategory(selectedCategory, userEmail)
+        }
+    }
 
     Column(modifier = Modifier.fillMaxSize()) {
         // Header
@@ -73,17 +109,29 @@ fun HomeScreen(
                     value = searchQuery,
                     onValueChange = { 
                         searchQuery = it
-                        viewModel.searchRecipes(it)
+                        viewModel.searchRecipes(it, userEmail)
                     },
                     modifier = Modifier.fillMaxWidth(),
                     placeholder = { Text("Поиск рецептов...") },
                     leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
                     shape = RoundedCornerShape(24.dp),
+                    keyboardOptions = androidx.compose.ui.text.input.KeyboardOptions(
+                        imeAction = ImeAction.Search
+                    ),
+                    keyboardActions = androidx.compose.ui.text.input.KeyboardActions(
+                        onSearch = { focusManager.clearFocus() }
+                    ),
+                    supportingText = { Text("Введите название или ингредиент") },
+                    isError = searchQuery.length > 50,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .focusRequester(focusRequester),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedContainerColor = MaterialTheme.colorScheme.surface,
                         unfocusedContainerColor = MaterialTheme.colorScheme.surface
                     )
                 )
+                LaunchedEffect(Unit) { focusRequester.requestFocus() }
             }
         }
 
@@ -97,32 +145,37 @@ fun HomeScreen(
         ) {
             items(categories) { category ->
                 FilterChip(
-                    selected = selectedCategory == category.id,
-                    onClick = {
-                        selectedCategory = category.id
-                        if (category.id == "all") {
-                            viewModel.loadAllRecipes()
-                        } else {
-                            viewModel.loadRecipesByCategory(category.id)
-                        }
-                    },
-                    label = { Text("${category.icon} ${category.name}") }
-                )
+                        selected = selectedCategory == category.id,
+                        onClick = {
+                            selectedCategory = category.id
+                            if (category.id == "all") {
+                                viewModel.loadAllRecipes(userEmail)
+                            } else {
+                                viewModel.loadRecipesByCategory(category.id, userEmail)
+                            }
+                        },
+                        label = { Text("${category.icon} ${category.name}") }
+                    )
             }
         }
 
         // Recipes list
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 8.dp)
+            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 8.dp),
+            state = listState
         ) {
-            items(recipes) { recipe ->
+            items(orderedRecipes, key = { it.id }) { recipe ->
                 RecipeCard(
                     recipe = recipe,
                     onClick = { onRecipeClick(recipe.id) },
                     onFavoriteClick = {
-                        scope.launch {
-                            viewModel.toggleFavorite(recipe.id, !recipe.isFavorite)
+                        if (!isLoggedIn || userEmail.isNullOrBlank()) {
+                            showAuthDialog = true
+                        } else {
+                            scope.launch {
+                                viewModel.toggleFavorite(userEmail, recipe.id, !recipe.isFavorite)
+                            }
                         }
                     }
                 )
@@ -145,5 +198,18 @@ fun HomeScreen(
                 }
             }
         }
+    }
+
+    if (showAuthDialog) {
+        AlertDialog(
+            onDismissRequest = { showAuthDialog = false },
+            confirmButton = {
+                TextButton(onClick = { showAuthDialog = false }) {
+                    Text("Хорошо")
+                }
+            },
+            title = { Text("Требуется авторизация") },
+            text = { Text("Войдите в профиль, чтобы добавлять рецепты в избранное.") }
+        )
     }
 }

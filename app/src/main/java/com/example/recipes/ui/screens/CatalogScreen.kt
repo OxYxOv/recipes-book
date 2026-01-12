@@ -13,6 +13,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.recipes.data.local.RecipeDatabase
+import com.example.recipes.data.local.UserPreferencesManager
 import com.example.recipes.data.remote.RetrofitClient
 import com.example.recipes.data.repository.RecipeRepository
 import com.example.recipes.ui.components.RecipeCard
@@ -32,6 +33,14 @@ fun CatalogScreen(
 ) {
     val recipes by viewModel.recipes.collectAsState()
     val scope = rememberCoroutineScope()
+    val preferencesManager = remember { UserPreferencesManager(LocalContext.current) }
+    val isLoggedIn by preferencesManager.isLoggedIn.collectAsState(initial = false)
+    val userEmail by preferencesManager.userEmail.collectAsState(initial = null)
+    var showAuthDialog by remember { mutableStateOf(false) }
+
+    LaunchedEffect(userEmail) {
+        viewModel.loadRecipes(userEmail)
+    }
 
     Column(modifier = Modifier.fillMaxSize()) {
         // Header
@@ -59,8 +68,12 @@ fun CatalogScreen(
                     recipe = recipe,
                     onClick = { onRecipeClick(recipe.id) },
                     onFavoriteClick = {
-                        scope.launch {
-                            viewModel.toggleFavorite(recipe.id, !recipe.isFavorite)
+                        if (!isLoggedIn || userEmail.isNullOrBlank()) {
+                            showAuthDialog = true
+                        } else {
+                            scope.launch {
+                                viewModel.toggleFavorite(userEmail, recipe.id, !recipe.isFavorite)
+                            }
                         }
                     }
                 )
@@ -83,5 +96,18 @@ fun CatalogScreen(
                 }
             }
         }
+    }
+
+    if (showAuthDialog) {
+        AlertDialog(
+            onDismissRequest = { showAuthDialog = false },
+            confirmButton = {
+                TextButton(onClick = { showAuthDialog = false }) {
+                    Text("Понял")
+                }
+            },
+            title = { Text("Требуется вход") },
+            text = { Text("Авторизуйтесь, чтобы управлять избранным.") }
+        )
     }
 }

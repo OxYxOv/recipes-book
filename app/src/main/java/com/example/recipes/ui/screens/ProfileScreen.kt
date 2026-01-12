@@ -12,18 +12,41 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardOptions
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.recipes.data.local.UserPreferencesManager
+import com.example.recipes.data.local.RecipeDatabase
+import com.example.recipes.data.remote.RetrofitClient
+import com.example.recipes.data.repository.RecipeRepository
+import com.example.recipes.ui.components.RecipeCard
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
+import android.util.Patterns
 
 @Composable
-fun ProfileScreen() {
+fun ProfileScreen(onRecipeClick: (Long) -> Unit = {}) {
     val context = LocalContext.current
     val preferencesManager = remember { UserPreferencesManager(context) }
     val isLoggedIn by preferencesManager.isLoggedIn.collectAsState(initial = false)
     val userName by preferencesManager.userName.collectAsState(initial = null)
+    val userEmail by preferencesManager.userEmail.collectAsState(initial = null)
     val scope = rememberCoroutineScope()
+    val repository = remember {
+        RecipeRepository(
+            RecipeDatabase.getDatabase(context).recipeDao(),
+            RetrofitClient.recipeApiService
+        )
+    }
+    val favoriteRecipes by remember(userEmail) {
+        if (userEmail != null) repository.getFavoriteRecipes(userEmail!!)
+        else flowOf(emptyList())
+    }.collectAsState(initial = emptyList())
+    val myRecipes by remember(userEmail) {
+        if (userEmail != null) repository.getUserRecipes(userEmail!!)
+        else flowOf(emptyList())
+    }.collectAsState(initial = emptyList())
 
     Column(
         modifier = Modifier
@@ -68,25 +91,43 @@ fun ProfileScreen() {
                     fontWeight = FontWeight.Bold
                 )
 
-                Spacer(modifier = Modifier.height(32.dp))
+                Spacer(modifier = Modifier.height(24.dp))
 
-                ProfileMenuItem(
-                    icon = Icons.Default.Favorite,
-                    title = "Избранные рецепты",
-                    onClick = { /* Navigate to favorites */ }
+                Text(
+                    text = "Избранные рецепты",
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.fillMaxWidth()
                 )
+                favoriteRecipes.forEach { recipe ->
+                    RecipeCard(
+                        recipe = recipe,
+                        onClick = { onRecipeClick(recipe.id) },
+                        onFavoriteClick = {
+                            scope.launch {
+                                repository.toggleFavorite(userEmail ?: "", recipe.id, !recipe.isFavorite)
+                            }
+                        }
+                    )
+                }
 
-                ProfileMenuItem(
-                    icon = Icons.Default.Restaurant,
-                    title = "Мои рецепты",
-                    onClick = { /* Navigate to my recipes */ }
-                )
+                Spacer(modifier = Modifier.height(16.dp))
 
-                ProfileMenuItem(
-                    icon = Icons.Default.Settings,
-                    title = "Настройки",
-                    onClick = { /* Navigate to settings */ }
+                Text(
+                    text = "Мои рецепты",
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.fillMaxWidth()
                 )
+                myRecipes.forEach { recipe ->
+                    RecipeCard(
+                        recipe = recipe,
+                        onClick = { onRecipeClick(recipe.id) },
+                        onFavoriteClick = {
+                            scope.launch {
+                                repository.toggleFavorite(userEmail ?: "", recipe.id, !recipe.isFavorite)
+                            }
+                        }
+                    )
+                }
 
                 Spacer(modifier = Modifier.height(32.dp))
 
@@ -161,6 +202,11 @@ fun LoginRegisterView(onLogin: (String, String) -> Unit) {
     var username by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    val emailFocusRequester = remember { androidx.compose.ui.focus.FocusRequester() }
+
+    val emailError = email.isBlank() || !android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()
+    val passwordError = password.length < 4
+    val usernameError = !isLogin && username.isBlank()
 
     Column(
         modifier = Modifier
@@ -180,7 +226,12 @@ fun LoginRegisterView(onLogin: (String, String) -> Unit) {
                 value = username,
                 onValueChange = { username = it },
                 label = { Text("Имя пользователя") },
-                modifier = Modifier.fillMaxWidth(),
+                placeholder = { Text("Укажите имя") },
+                isError = usernameError,
+                supportingText = { if (usernameError) Text("Имя обязательно") },
+                modifier = Modifier
+                    .fillMaxWidth(),
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
                 leadingIcon = { Icon(Icons.Default.Person, contentDescription = null) }
             )
             Spacer(modifier = Modifier.height(16.dp))
@@ -190,9 +241,16 @@ fun LoginRegisterView(onLogin: (String, String) -> Unit) {
             value = email,
             onValueChange = { email = it },
             label = { Text("Email") },
-            modifier = Modifier.fillMaxWidth(),
+            placeholder = { Text("example@mail.com") },
+            isError = emailError,
+            supportingText = { if (emailError) Text("Введите корректный email") },
+            modifier = Modifier
+                .fillMaxWidth()
+                .focusRequester(emailFocusRequester),
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
             leadingIcon = { Icon(Icons.Default.Email, contentDescription = null) }
         )
+        LaunchedEffect(isLogin) { emailFocusRequester.requestFocus() }
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -200,8 +258,12 @@ fun LoginRegisterView(onLogin: (String, String) -> Unit) {
             value = password,
             onValueChange = { password = it },
             label = { Text("Пароль") },
+            placeholder = { Text("Минимум 4 символа") },
+            isError = passwordError,
+            supportingText = { if (passwordError) Text("Пароль слишком короткий") },
             modifier = Modifier.fillMaxWidth(),
             visualTransformation = PasswordVisualTransformation(),
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
             leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) }
         )
 
@@ -215,8 +277,7 @@ fun LoginRegisterView(onLogin: (String, String) -> Unit) {
                 )
             },
             modifier = Modifier.fillMaxWidth(),
-            enabled = email.isNotBlank() && password.isNotBlank() &&
-                    (isLogin || username.isNotBlank())
+            enabled = !emailError && !passwordError && (!isLogin || !usernameError)
         ) {
             Text(if (isLogin) "Войти" else "Зарегистрироваться")
         }

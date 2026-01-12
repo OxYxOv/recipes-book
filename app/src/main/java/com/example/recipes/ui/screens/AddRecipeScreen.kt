@@ -10,18 +10,23 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.recipes.data.local.RecipeDatabase
+import com.example.recipes.data.local.UserPreferencesManager
 import com.example.recipes.data.remote.RetrofitClient
 import com.example.recipes.data.repository.RecipeRepository
 import kotlinx.coroutines.launch
+import java.util.Calendar
+import android.app.TimePickerDialog
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddRecipeScreen(
     onRecipeAdded: () -> Unit,
+    onAuthRequired: () -> Unit = {},
     viewModel: AddRecipeViewModel = viewModel(
         factory = AddRecipeViewModelFactory(
             RecipeRepository(
@@ -41,6 +46,24 @@ fun AddRecipeScreen(
     var difficulty by remember { mutableStateOf("easy") }
     var imageUrl by remember { mutableStateOf("") }
     val scope = rememberCoroutineScope()
+    val focusRequester = remember { androidx.compose.ui.focus.FocusRequester() }
+    val preferencesManager = remember { UserPreferencesManager(LocalContext.current) }
+    val isLoggedIn by preferencesManager.isLoggedIn.collectAsState(initial = false)
+    val userEmail by preferencesManager.userEmail.collectAsState(initial = null)
+    val context = LocalContext.current
+    var showTimePicker by remember { mutableStateOf(false) }
+    var showAuthDialog by remember { mutableStateOf(false) }
+
+    LaunchedEffect(isLoggedIn, userEmail) {
+        showAuthDialog = !isLoggedIn || userEmail.isNullOrBlank()
+    }
+
+    val nameError = name.isBlank()
+    val descError = description.isBlank()
+    val ingredientError = ingredients.isBlank()
+    val instructionError = instructions.isBlank()
+    val cookingError = cookingTime.isBlank()
+    val servingsError = servings.isBlank()
 
     val categories = listOf(
         "breakfast" to "Завтрак",
@@ -61,6 +84,22 @@ fun AddRecipeScreen(
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
     ) {
+        if (showAuthDialog) {
+            AlertDialog(
+                onDismissRequest = {
+                    showAuthDialog = false
+                    onAuthRequired()
+                },
+                confirmButton = {
+                    TextButton(onClick = {
+                        showAuthDialog = false
+                        onAuthRequired()
+                    }) { Text("Перейти к входу") }
+                },
+                title = { Text("Требуется авторизация") },
+                text = { Text("Войдите или зарегистрируйтесь, чтобы добавлять собственные рецепты.") }
+            )
+        }
         // Header
         Surface(
             modifier = Modifier.fillMaxWidth(),
@@ -81,8 +120,15 @@ fun AddRecipeScreen(
                 value = name,
                 onValueChange = { name = it },
                 label = { Text("Название рецепта") },
-                modifier = Modifier.fillMaxWidth()
+                placeholder = { Text("Например, Паста Карбонара") },
+                isError = nameError,
+                supportingText = { if (nameError) Text("Название обязательно") },
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .focusRequester(focusRequester)
             )
+            LaunchedEffect(Unit) { focusRequester.requestFocus() }
 
             Spacer(modifier = Modifier.height(16.dp))
 
@@ -90,6 +136,9 @@ fun AddRecipeScreen(
                 value = description,
                 onValueChange = { description = it },
                 label = { Text("Описание") },
+                placeholder = { Text("Кратко опишите блюдо") },
+                isError = descError,
+                supportingText = { if (descError) Text("Добавьте описание") },
                 modifier = Modifier.fillMaxWidth(),
                 minLines = 3
             )
@@ -100,6 +149,9 @@ fun AddRecipeScreen(
                 value = ingredients,
                 onValueChange = { ingredients = it },
                 label = { Text("Ингредиенты (по одному на строку)") },
+                placeholder = { Text("Молоко, яйца, соль ...") },
+                isError = ingredientError,
+                supportingText = { if (ingredientError) Text("Введите ингредиенты") },
                 modifier = Modifier.fillMaxWidth(),
                 minLines = 5
             )
@@ -110,6 +162,9 @@ fun AddRecipeScreen(
                 value = instructions,
                 onValueChange = { instructions = it },
                 label = { Text("Инструкции приготовления") },
+                placeholder = { Text("Шаги приготовления по порядку") },
+                isError = instructionError,
+                supportingText = { if (instructionError) Text("Добавьте инструкции") },
                 modifier = Modifier.fillMaxWidth(),
                 minLines = 5
             )
@@ -122,18 +177,39 @@ fun AddRecipeScreen(
             ) {
                 OutlinedTextField(
                     value = cookingTime,
-                    onValueChange = { cookingTime = it },
+                    onValueChange = { input ->
+                        cookingTime = input.filter { it.isDigit() }.take(4)
+                    },
                     label = { Text("Время (мин)") },
+                    placeholder = { Text("Например, 30") },
+                    isError = cookingError,
+                    supportingText = { if (cookingError) Text("Укажите время приготовления") },
                     modifier = Modifier.weight(1f),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Number,
+                        imeAction = ImeAction.Next
+                    ),
+                    trailingIcon = {
+                        TextButton(onClick = { showTimePicker = true }) {
+                            Text("Выбрать")
+                        }
+                    }
                 )
 
                 OutlinedTextField(
                     value = servings,
-                    onValueChange = { servings = it },
+                    onValueChange = { input ->
+                        servings = input.filter { it.isDigit() }.take(3)
+                    },
                     label = { Text("Порции") },
+                    placeholder = { Text("Например, 2") },
+                    isError = servingsError,
+                    supportingText = { if (servingsError) Text("Укажите количество порций") },
                     modifier = Modifier.weight(1f),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Number,
+                        imeAction = ImeAction.Next
+                    )
                 )
             }
 
@@ -142,19 +218,20 @@ fun AddRecipeScreen(
             // Category dropdown
             var categoryExpanded by remember { mutableStateOf(false) }
             ExposedDropdownMenuBox(
-                expanded = categoryExpanded,
-                onExpandedChange = { categoryExpanded = it }
-            ) {
-                OutlinedTextField(
-                    value = categories.find { it.first == category }?.second ?: "",
-                    onValueChange = {},
-                    readOnly = true,
-                    label = { Text("Категория") },
-                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = categoryExpanded) },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .menuAnchor()
-                )
+                    expanded = categoryExpanded,
+                    onExpandedChange = { categoryExpanded = it }
+                ) {
+                    OutlinedTextField(
+                        value = categories.find { it.first == category }?.second ?: "",
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Категория") },
+                        placeholder = { Text("Выберите категорию") },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = categoryExpanded) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .menuAnchor()
+                    )
                 ExposedDropdownMenu(
                     expanded = categoryExpanded,
                     onDismissRequest = { categoryExpanded = false }
@@ -176,19 +253,20 @@ fun AddRecipeScreen(
             // Difficulty dropdown
             var difficultyExpanded by remember { mutableStateOf(false) }
             ExposedDropdownMenuBox(
-                expanded = difficultyExpanded,
-                onExpandedChange = { difficultyExpanded = it }
-            ) {
-                OutlinedTextField(
-                    value = difficulties.find { it.first == difficulty }?.second ?: "",
-                    onValueChange = {},
-                    readOnly = true,
-                    label = { Text("Сложность") },
-                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = difficultyExpanded) },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .menuAnchor()
-                )
+                    expanded = difficultyExpanded,
+                    onExpandedChange = { difficultyExpanded = it }
+                ) {
+                    OutlinedTextField(
+                        value = difficulties.find { it.first == difficulty }?.second ?: "",
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Сложность") },
+                        placeholder = { Text("Выберите сложность") },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = difficultyExpanded) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .menuAnchor()
+                    )
                 ExposedDropdownMenu(
                     expanded = difficultyExpanded,
                     onDismissRequest = { difficultyExpanded = false }
@@ -211,6 +289,7 @@ fun AddRecipeScreen(
                 value = imageUrl,
                 onValueChange = { imageUrl = it },
                 label = { Text("URL изображения (необязательно)") },
+                placeholder = { Text("Если оставить пустым, добавится картинка по умолчанию") },
                 modifier = Modifier.fillMaxWidth()
             )
 
@@ -218,27 +297,52 @@ fun AddRecipeScreen(
 
             Button(
                 onClick = {
-                    scope.launch {
-                        viewModel.addRecipe(
-                            name = name,
-                            description = description,
-                            ingredients = ingredients,
-                            instructions = instructions,
-                            cookingTime = cookingTime.toIntOrNull() ?: 0,
-                            servings = servings.toIntOrNull() ?: 1,
-                            category = category,
-                            difficulty = difficulty,
-                            imageUrl = imageUrl.ifBlank { null }
-                        )
-                        onRecipeAdded()
+                    if (isLoggedIn && !userEmail.isNullOrBlank()) {
+                        scope.launch {
+                            viewModel.addRecipe(
+                                name = name,
+                                description = description,
+                                ingredients = ingredients,
+                                instructions = instructions,
+                                cookingTime = cookingTime.toIntOrNull() ?: 0,
+                                servings = servings.toIntOrNull() ?: 1,
+                                category = category,
+                                difficulty = difficulty,
+                                imageUrl = imageUrl.ifBlank { null },
+                                ownerId = userEmail!!
+                            )
+                            onRecipeAdded()
+                        }
+                    } else {
+                        onAuthRequired()
                     }
                 },
                 modifier = Modifier.fillMaxWidth(),
-                enabled = name.isNotBlank() && description.isNotBlank() &&
-                        ingredients.isNotBlank() && instructions.isNotBlank()
+                enabled = isLoggedIn && !userEmail.isNullOrBlank() &&
+                        name.isNotBlank() && description.isNotBlank() &&
+                        ingredients.isNotBlank() && instructions.isNotBlank() &&
+                        cookingTime.isNotBlank() && servings.isNotBlank()
             ) {
                 Text("Сохранить рецепт")
             }
+        }
+    }
+
+    if (showTimePicker) {
+        val calendar = Calendar.getInstance()
+        TimePickerDialog(
+            context,
+            { _, hourOfDay, minute ->
+                val totalMinutes = hourOfDay * 60 + minute
+                cookingTime = totalMinutes.toString()
+                showTimePicker = false
+            },
+            calendar.get(Calendar.HOUR_OF_DAY),
+            calendar.get(Calendar.MINUTE),
+            true
+        ).apply {
+            setOnDismissListener { showTimePicker = false }
+            show()
         }
     }
 }

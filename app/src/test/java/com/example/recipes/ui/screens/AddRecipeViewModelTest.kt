@@ -29,6 +29,8 @@ class AddRecipeViewModelTest {
 
     private lateinit var viewModel: AddRecipeViewModel
 
+    private val ownerId = "user@test.com"
+
     @Before
     fun setup() {
         MockitoAnnotations.openMocks(this)
@@ -66,7 +68,8 @@ class AddRecipeViewModelTest {
             servings = servings,
             category = category,
             difficulty = difficulty,
-            imageUrl = imageUrl
+            imageUrl = imageUrl,
+            ownerId = ownerId
         )
 
         // Then
@@ -97,7 +100,8 @@ class AddRecipeViewModelTest {
             servings = servings,
             category = category,
             difficulty = difficulty,
-            imageUrl = null
+            imageUrl = null,
+            ownerId = ownerId
         )
 
         // Then
@@ -119,7 +123,8 @@ class AddRecipeViewModelTest {
             servings = 2,
             category = "breakfast",
             difficulty = "easy",
-            imageUrl = null
+            imageUrl = null,
+            ownerId = ownerId
         )
 
         // Then
