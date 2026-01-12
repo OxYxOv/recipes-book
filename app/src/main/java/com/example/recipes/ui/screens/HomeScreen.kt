@@ -178,13 +178,13 @@ fun HomeScreen(
                     selected = highlightedCategory == category.id,
                     onClick = {
                         selectedCategory = category.id
-                        highlightedCategory = category.id
                         if (category.id != "all") {
                             val targetIndex = orderedRecipes.indexOfFirst { it.category == category.id }
                             if (targetIndex >= 0) {
                                 scope.launch { listState.animateScrollToItem(targetIndex) }
                             }
                         }
+                        highlightedCategory = category.id
                         if (category.id == "all") {
                             viewModel.loadAllRecipes(userEmail)
                         } else {

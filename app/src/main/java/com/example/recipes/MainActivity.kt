@@ -17,6 +17,8 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
+    private val preferencesManager by lazy { UserPreferencesManager(applicationContext) }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         
@@ -39,7 +41,7 @@ class MainActivity : ComponentActivity() {
         lifecycleScope.launch {
             val db = RecipeDatabase.getDatabase(applicationContext)
             val dao = db.recipeDao()
-            val userId = UserPreferencesManager(applicationContext).userEmail.first()
+            val userId = preferencesManager.userEmail.first()
             // Check if database is empty
             val hasRecipes = dao.getAllRecipes(userId).first().isNotEmpty()
 

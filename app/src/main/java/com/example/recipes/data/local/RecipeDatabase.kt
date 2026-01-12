@@ -43,7 +43,6 @@ abstract class RecipeDatabase : RoomDatabase() {
                     "recipe_database"
                 )
                     .addMigrations(MIGRATION_2_3)
-                    .fallbackToDestructiveMigration()
                     .build()
                 INSTANCE = instance
                 instance
