@@ -21,13 +21,14 @@ import com.example.recipes.data.repository.RecipeRepository
 import kotlinx.coroutines.launch
 import java.util.Calendar
 import android.app.TimePickerDialog
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 
 private const val COOKING_TIME_MAX_LENGTH = 4
 private const val SERVINGS_MAX_LENGTH = 3
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalComposeUiApi::class)
 @Composable
 fun AddRecipeScreen(
     onRecipeAdded: () -> Unit,

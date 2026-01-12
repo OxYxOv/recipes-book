@@ -26,8 +26,9 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import android.util.Patterns
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.focus.focusRequester
-
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalComposeUiApi::class)
 @Composable
 fun ProfileScreen(onRecipeClick: (Long) -> Unit = {}) {
     val context = LocalContext.current
@@ -161,7 +162,7 @@ fun ProfileScreen(onRecipeClick: (Long) -> Unit = {}) {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalComposeUiApi::class)
 @Composable
 fun ProfileMenuItem(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
@@ -198,7 +199,7 @@ fun ProfileMenuItem(
         }
     }
 }
-
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalComposeUiApi::class)
 @Composable
 fun LoginRegisterView(onLogin: (String, String) -> Unit) {
     var isLogin by remember { mutableStateOf(true) }
