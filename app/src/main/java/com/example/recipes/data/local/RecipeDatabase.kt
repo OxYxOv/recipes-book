@@ -12,7 +12,7 @@ import com.example.recipes.data.model.Recipe
 
 @Database(
     entities = [Recipe::class, FavoriteRecipe::class, HiddenRecipe::class],
-    version = 3,
+    version = 4,
     exportSchema = false
 )
 abstract class RecipeDatabase : RoomDatabase() {
@@ -34,6 +34,28 @@ abstract class RecipeDatabase : RoomDatabase() {
                 )
             }
         }
+        private val MIGRATION_3_4 = object : Migration(3, 4) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL(
+                    """
+                    CREATE TABLE hidden_recipes_new (
+                        userId TEXT NOT NULL,
+                        recipeId INTEGER NOT NULL,
+                        PRIMARY KEY(userId, recipeId),
+                        FOREIGN KEY(recipeId) REFERENCES recipes(id) ON DELETE CASCADE
+                    )
+                    """.trimIndent()
+                )
+                database.execSQL(
+                    """
+                    INSERT OR IGNORE INTO hidden_recipes_new(userId, recipeId)
+                    SELECT userId, recipeId FROM hidden_recipes
+                    """.trimIndent()
+                )
+                database.execSQL("DROP TABLE hidden_recipes")
+                database.execSQL("ALTER TABLE hidden_recipes_new RENAME TO hidden_recipes")
+            }
+        }
 
         fun getDatabase(context: Context): RecipeDatabase {
             return INSTANCE ?: synchronized(this) {
@@ -42,7 +64,7 @@ abstract class RecipeDatabase : RoomDatabase() {
                     RecipeDatabase::class.java,
                     "recipe_database"
                 )
-                    .addMigrations(MIGRATION_2_3)
+                    .addMigrations(MIGRATION_2_3, MIGRATION_3_4)
                     .build()
                 INSTANCE = instance
                 instance

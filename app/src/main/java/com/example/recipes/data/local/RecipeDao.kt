@@ -82,6 +82,15 @@ interface RecipeDao {
     @Query("SELECT * FROM recipes WHERE ownerId = :userId ORDER BY id DESC")
     fun getUserRecipes(userId: String): Flow<List<Recipe>>
 
+    @Query(
+        """
+        SELECT COUNT(*) > 0 FROM recipes 
+        WHERE (ownerId IS NULL OR (:userId IS NOT NULL AND ownerId = :userId))
+        AND (:userId IS NULL OR id NOT IN (SELECT recipeId FROM hidden_recipes WHERE userId = :userId))
+        """
+    )
+    suspend fun hasRecipes(userId: String?): Boolean
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun hideRecipe(hiddenRecipe: HiddenRecipe)
 

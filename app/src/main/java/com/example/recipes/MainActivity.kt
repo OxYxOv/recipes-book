@@ -43,7 +43,7 @@ class MainActivity : ComponentActivity() {
             val dao = db.recipeDao()
             val userId = preferencesManager.userEmail.firstOrNull()
             // Check if database is empty
-            val hasRecipes = dao.getAllRecipes(userId).firstOrNull()?.isNotEmpty() == true
+            val hasRecipes = dao.hasRecipes(userId)
 
             if (!hasRecipes) {
                 // Add sample recipes

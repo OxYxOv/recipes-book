@@ -77,7 +77,7 @@ fun HomeScreen(
     }
     var selectedCategory by remember { mutableStateOf("all") }
     val initialHighlightedCategory = remember(categories) {
-        categories.firstOrNull { it.id != "all" }?.id ?: categories.firstOrNull()?.id ?: "all"
+        categories.firstOrNull { it.id != "all" }?.id ?: "all"
     }
     var highlightedCategory by remember { mutableStateOf(initialHighlightedCategory) }
     var searchQuery by remember { mutableStateOf("") }
