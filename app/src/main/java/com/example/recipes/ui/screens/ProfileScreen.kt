@@ -208,6 +208,14 @@ fun LoginRegisterView(onLogin: (String, String) -> Unit) {
     var attemptedSubmit by remember { mutableStateOf(false) }
     val emailFocusRequester = remember { androidx.compose.ui.focus.FocusRequester() }
 
+    // Helper function to check if the form is valid
+    fun isFormValid(): Boolean {
+        val isEmailValid = email.isNotBlank() && android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()
+        val isPasswordValid = password.length >= 4
+        val isUsernameValid = isLogin || username.isNotBlank()
+        return isEmailValid && isPasswordValid && isUsernameValid
+    }
+
     val emailError = attemptedSubmit && (email.isBlank() || !android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches())
     val passwordError = attemptedSubmit && password.length < 4
     val usernameError = attemptedSubmit && !isLogin && username.isBlank()
@@ -285,12 +293,7 @@ fun LoginRegisterView(onLogin: (String, String) -> Unit) {
         Button(
             onClick = {
                 attemptedSubmit = true
-                // Validate the raw input values
-                val isEmailValid = email.isNotBlank() && android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()
-                val isPasswordValid = password.length >= 4
-                val isUsernameValid = isLogin || username.isNotBlank()
-                
-                if (isEmailValid && isPasswordValid && isUsernameValid) {
+                if (isFormValid()) {
                     onLogin(
                         if (isLogin) email.substringBefore("@") else username,
                         email
