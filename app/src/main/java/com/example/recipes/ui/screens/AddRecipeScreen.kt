@@ -4,6 +4,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -73,6 +75,16 @@ fun AddRecipeScreen(
     val instructionError = attemptedSubmit && instructions.isBlank()
     val cookingError = attemptedSubmit && cookingTime.isBlank()
     val servingsError = attemptedSubmit && servings.isBlank()
+    
+    // Helper function to check if form is valid
+    fun isFormValid(): Boolean {
+        return name.isNotBlank() && 
+               description.isNotBlank() && 
+               ingredients.isNotBlank() && 
+               instructions.isNotBlank() && 
+               cookingTime.isNotBlank() && 
+               servings.isNotBlank()
+    }
 
     val categories = listOf(
         "breakfast" to "Завтрак",
@@ -204,8 +216,11 @@ fun AddRecipeScreen(
                     ),
                     singleLine = true,
                     trailingIcon = {
-                        TextButton(onClick = { showTimePicker = true }) {
-                            Text("⏱️")
+                        IconButton(onClick = { showTimePicker = true }) {
+                            Icon(
+                                imageVector = Icons.Default.Schedule,
+                                contentDescription = "Выбрать время приготовления"
+                            )
                         }
                     }
                 )
@@ -318,10 +333,7 @@ fun AddRecipeScreen(
             Button(
                 onClick = {
                     attemptedSubmit = true
-                    if (isLoggedIn && !userEmail.isNullOrBlank() &&
-                        name.isNotBlank() && description.isNotBlank() &&
-                        ingredients.isNotBlank() && instructions.isNotBlank() &&
-                        cookingTime.isNotBlank() && servings.isNotBlank()) {
+                    if (isLoggedIn && !userEmail.isNullOrBlank() && isFormValid()) {
                         scope.launch {
                             viewModel.addRecipe(
                                 name = name,

@@ -285,7 +285,12 @@ fun LoginRegisterView(onLogin: (String, String) -> Unit) {
         Button(
             onClick = {
                 attemptedSubmit = true
-                if (!emailError && !passwordError && !usernameError) {
+                // Validate the raw input values
+                val isEmailValid = email.isNotBlank() && android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()
+                val isPasswordValid = password.length >= 4
+                val isUsernameValid = isLogin || username.isNotBlank()
+                
+                if (isEmailValid && isPasswordValid && isUsernameValid) {
                     onLogin(
                         if (isLogin) email.substringBefore("@") else username,
                         email
