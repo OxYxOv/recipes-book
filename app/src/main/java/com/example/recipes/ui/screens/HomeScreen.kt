@@ -77,7 +77,7 @@ fun HomeScreen(
     }
     var selectedCategory by remember { mutableStateOf("all") }
     val initialHighlightedCategory = remember(categories) {
-        categories.firstOrNull { it.id != "all" }?.id ?: categories.first().id
+        categories.firstOrNull { it.id != "all" }?.id ?: categories.firstOrNull()?.id ?: "all"
     }
     var highlightedCategory by remember { mutableStateOf(initialHighlightedCategory) }
     var searchQuery by remember { mutableStateOf("") }
@@ -181,8 +181,8 @@ fun HomeScreen(
                         selectedCategory = category.id
                         if (category.id != "all") {
                             val targetIndex = orderedRecipes.indexOfFirst { it.category == category.id }
-                            if (targetIndex >= 0) {
-                                scope.launch { listState.animateScrollToItem(targetIndex) }
+                            if (targetIndex in orderedRecipes.indices) {
+                                scope.launch { listState.animateScrollToItem(targetIndex, scrollOffset = 0) }
                             }
                         }
                         highlightedCategory = category.id
