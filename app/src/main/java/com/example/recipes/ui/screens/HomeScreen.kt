@@ -76,9 +76,10 @@ fun HomeScreen(
         )
     }
     var selectedCategory by remember { mutableStateOf("all") }
-    var highlightedCategory by remember {
-        mutableStateOf(categories.firstOrNull { it.id != "all" }?.id ?: categories.first().id)
+    val initialHighlightedCategory = remember(categories) {
+        categories.firstOrNull { it.id != "all" }?.id ?: categories.first().id
     }
+    var highlightedCategory by remember { mutableStateOf(initialHighlightedCategory) }
     var searchQuery by remember { mutableStateOf("") }
     val scope = rememberCoroutineScope()
     val focusManager = LocalFocusManager.current

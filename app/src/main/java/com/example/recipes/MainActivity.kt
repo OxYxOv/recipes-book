@@ -13,7 +13,7 @@ import com.example.recipes.data.local.UserPreferencesManager
 import com.example.recipes.data.model.Recipe
 import com.example.recipes.ui.navigation.AppNavigation
 import com.example.recipes.ui.theme.RecipesBookTheme
-import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
@@ -41,7 +41,7 @@ class MainActivity : ComponentActivity() {
         lifecycleScope.launch {
             val db = RecipeDatabase.getDatabase(applicationContext)
             val dao = db.recipeDao()
-            val userId = preferencesManager.userEmail.first()
+            val userId = preferencesManager.userEmail.firstOrNull()
             // Check if database is empty
             val hasRecipes = dao.getAllRecipes(userId).first().isNotEmpty()
 

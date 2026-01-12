@@ -25,7 +25,7 @@ abstract class RecipeDatabase : RoomDatabase() {
             override fun migrate(database: SupportSQLiteDatabase) {
                 database.execSQL(
                     """
-                    CREATE TABLE IF NOT EXISTS `hidden_recipes` (
+                    CREATE TABLE `hidden_recipes` (
                         `userId` TEXT NOT NULL,
                         `recipeId` INTEGER NOT NULL,
                         PRIMARY KEY(`userId`, `recipeId`)
