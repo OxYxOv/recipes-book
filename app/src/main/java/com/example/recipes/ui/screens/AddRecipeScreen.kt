@@ -60,8 +60,11 @@ fun AddRecipeScreen(
     var showTimePicker by remember { mutableStateOf(false) }
     var showAuthDialog by remember { mutableStateOf(false) }
 
-    LaunchedEffect(isLoggedIn, userEmail) {
-        showAuthDialog = !isLoggedIn || userEmail.isNullOrBlank()
+    // Only check auth status on first load, not continuously
+    LaunchedEffect(Unit) {
+        if (!isLoggedIn || userEmail.isNullOrBlank()) {
+            showAuthDialog = true
+        }
     }
 
     val nameError = attemptedSubmit && name.isBlank()
