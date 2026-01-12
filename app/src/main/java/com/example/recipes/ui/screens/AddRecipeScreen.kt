@@ -22,6 +22,9 @@ import kotlinx.coroutines.launch
 import java.util.Calendar
 import android.app.TimePickerDialog
 
+private const val COOKING_TIME_MAX_LENGTH = 4
+private const val SERVINGS_MAX_LENGTH = 3
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddRecipeScreen(
@@ -178,7 +181,7 @@ fun AddRecipeScreen(
                 OutlinedTextField(
                     value = cookingTime,
                     onValueChange = { input ->
-                        cookingTime = input.filter { it.isDigit() }.take(4)
+                        cookingTime = input.filter { it.isDigit() }.take(COOKING_TIME_MAX_LENGTH)
                     },
                     label = { Text("Время (мин)") },
                     placeholder = { Text("Например, 30") },
@@ -199,7 +202,7 @@ fun AddRecipeScreen(
                 OutlinedTextField(
                     value = servings,
                     onValueChange = { input ->
-                        servings = input.filter { it.isDigit() }.take(3)
+                        servings = input.filter { it.isDigit() }.take(SERVINGS_MAX_LENGTH)
                     },
                     label = { Text("Порции") },
                     placeholder = { Text("Например, 2") },
