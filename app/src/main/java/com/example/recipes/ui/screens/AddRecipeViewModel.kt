@@ -2,6 +2,7 @@ package com.example.recipes.ui.screens
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import com.example.recipes.data.model.DEFAULT_RECIPE_IMAGE
 import com.example.recipes.data.model.Recipe
 import com.example.recipes.data.repository.RecipeRepository
 
@@ -15,7 +16,8 @@ class AddRecipeViewModel(private val repository: RecipeRepository) : ViewModel()
         servings: Int,
         category: String,
         difficulty: String,
-        imageUrl: String?
+        imageUrl: String?,
+        ownerId: String
     ) {
         val recipe = Recipe(
             name = name,
@@ -26,8 +28,9 @@ class AddRecipeViewModel(private val repository: RecipeRepository) : ViewModel()
             servings = servings,
             category = category,
             difficulty = difficulty,
-            imageUrl = imageUrl,
-            isLocal = true
+            imageUrl = imageUrl ?: DEFAULT_RECIPE_IMAGE,
+            isLocal = true,
+            ownerId = ownerId
         )
         repository.insertRecipe(recipe)
     }

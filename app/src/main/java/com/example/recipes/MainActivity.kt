@@ -9,6 +9,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.lifecycleScope
 import com.example.recipes.data.local.RecipeDatabase
+import com.example.recipes.data.model.DEFAULT_RECIPE_IMAGE
 import com.example.recipes.data.model.Recipe
 import com.example.recipes.ui.navigation.AppNavigation
 import com.example.recipes.ui.theme.RecipesBookTheme
@@ -53,7 +54,8 @@ class MainActivity : ComponentActivity() {
                         category = "breakfast",
                         cookingTime = 15,
                         difficulty = "easy",
-                        servings = 2
+                        servings = 2,
+                        imageUrl = DEFAULT_RECIPE_IMAGE
                     ),
                     Recipe(
                         name = "Борщ",
@@ -63,7 +65,8 @@ class MainActivity : ComponentActivity() {
                         category = "lunch",
                         cookingTime = 120,
                         difficulty = "medium",
-                        servings = 6
+                        servings = 6,
+                        imageUrl = DEFAULT_RECIPE_IMAGE
                     ),
                     Recipe(
                         name = "Куриные котлеты",
@@ -73,7 +76,8 @@ class MainActivity : ComponentActivity() {
                         category = "dinner",
                         cookingTime = 40,
                         difficulty = "easy",
-                        servings = 4
+                        servings = 4,
+                        imageUrl = DEFAULT_RECIPE_IMAGE
                     ),
                     Recipe(
                         name = "Шоколадный кекс",
@@ -83,7 +87,8 @@ class MainActivity : ComponentActivity() {
                         category = "dessert",
                         cookingTime = 50,
                         difficulty = "easy",
-                        servings = 8
+                        servings = 8,
+                        imageUrl = DEFAULT_RECIPE_IMAGE
                     ),
                     Recipe(
                         name = "Цезарь салат",
@@ -93,7 +98,8 @@ class MainActivity : ComponentActivity() {
                         category = "snack",
                         cookingTime = 20,
                         difficulty = "easy",
-                        servings = 2
+                        servings = 2,
+                        imageUrl = DEFAULT_RECIPE_IMAGE
                     ),
                     Recipe(
                         name = "Лазанья",
@@ -103,7 +109,8 @@ class MainActivity : ComponentActivity() {
                         category = "dinner",
                         cookingTime = 90,
                         difficulty = "hard",
-                        servings = 6
+                        servings = 6,
+                        imageUrl = DEFAULT_RECIPE_IMAGE
                     )
                 )
 

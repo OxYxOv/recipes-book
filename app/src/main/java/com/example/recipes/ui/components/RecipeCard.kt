@@ -20,6 +20,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import com.example.recipes.data.model.DEFAULT_RECIPE_IMAGE
 import com.example.recipes.data.model.Recipe
 
 @Composable
@@ -28,7 +29,8 @@ fun RecipeCard(
     onClick: () -> Unit,
     onFavoriteClick: () -> Unit,
     modifier: Modifier = Modifier
-) {
+    ) {
+    val displayImage = recipe.imageUrl ?: DEFAULT_RECIPE_IMAGE
     Card(
         modifier = modifier
             .fillMaxWidth()
@@ -40,32 +42,15 @@ fun RecipeCard(
     ) {
         Column {
             Box {
-                if (recipe.imageUrl != null) {
-                    AsyncImage(
-                        model = recipe.imageUrl,
-                        contentDescription = recipe.name,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(180.dp)
-                            .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)),
-                        contentScale = ContentScale.Crop
-                    )
-                } else {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(180.dp)
-                            .background(MaterialTheme.colorScheme.primaryContainer),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Restaurant,
-                            contentDescription = null,
-                            modifier = Modifier.size(64.dp),
-                            tint = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.3f)
-                        )
-                    }
-                }
+                AsyncImage(
+                    model = displayImage,
+                    contentDescription = recipe.name,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(180.dp)
+                        .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)),
+                    contentScale = ContentScale.Crop
+                )
 
                 // Favorite button overlay
                 Box(

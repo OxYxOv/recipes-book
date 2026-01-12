@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.recipes.data.model.Recipe
 import com.example.recipes.data.repository.RecipeRepository
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -12,41 +13,47 @@ import kotlinx.coroutines.launch
 class HomeViewModel(private val repository: RecipeRepository) : ViewModel() {
     private val _recipes = MutableStateFlow<List<Recipe>>(emptyList())
     val recipes: StateFlow<List<Recipe>> = _recipes
+    private var loadJob: Job? = null
 
     init {
-        loadAllRecipes()
+        loadAllRecipes(null)
     }
 
-    fun loadAllRecipes() {
-        viewModelScope.launch {
-            repository.getAllRecipes().collect { recipes ->
+    fun loadAllRecipes(userId: String?) {
+        loadJob?.cancel()
+        loadJob = viewModelScope.launch {
+            repository.getAllRecipes(userId).collect { recipes ->
                 _recipes.value = recipes
             }
         }
     }
 
-    fun loadRecipesByCategory(category: String) {
-        viewModelScope.launch {
-            repository.getRecipesByCategory(category).collect { recipes ->
+    fun loadRecipesByCategory(category: String, userId: String?) {
+        loadJob?.cancel()
+        loadJob = viewModelScope.launch {
+            repository.getRecipesByCategory(category, userId).collect { recipes ->
                 _recipes.value = recipes
             }
         }
     }
 
-    fun searchRecipes(query: String) {
+    fun searchRecipes(query: String, userId: String?) {
         if (query.isBlank()) {
-            loadAllRecipes()
+            loadAllRecipes(userId)
             return
         }
-        viewModelScope.launch {
-            repository.searchRecipes(query).collect { recipes ->
+        loadJob?.cancel()
+        loadJob = viewModelScope.launch {
+            repository.searchRecipes(query, userId).collect { recipes ->
                 _recipes.value = recipes
             }
         }
     }
 
-    suspend fun toggleFavorite(id: Long, isFavorite: Boolean) {
-        repository.toggleFavorite(id, isFavorite)
+    suspend fun toggleFavorite(userId: String?, id: Long, isFavorite: Boolean) {
+        if (!userId.isNullOrBlank()) {
+            repository.toggleFavorite(userId, id, isFavorite)
+        }
     }
 }
 
