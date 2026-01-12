@@ -14,6 +14,8 @@ import org.junit.Rule
 import org.junit.Test
 import org.mockito.Mock
 import org.mockito.MockitoAnnotations
+import org.mockito.kotlin.any
+import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 
@@ -29,6 +31,7 @@ class HomeViewModelTest {
     private lateinit var repository: RecipeRepository
 
     private lateinit var viewModel: HomeViewModel
+    private val userId = "user@test.com"
 
     private val testRecipe = Recipe(
         id = 1,
@@ -58,7 +61,7 @@ class HomeViewModelTest {
     fun `loadAllRecipes should update recipes state`() = runTest {
         // Given
         val recipes = listOf(testRecipe)
-        whenever(repository.getAllRecipes()).thenReturn(flowOf(recipes))
+        whenever(repository.getAllRecipes(any())).thenReturn(flowOf(recipes))
 
         // When
         viewModel = HomeViewModel(repository)
@@ -66,7 +69,7 @@ class HomeViewModelTest {
 
         // Then
         assertEquals(recipes, viewModel.recipes.value)
-        verify(repository).getAllRecipes()
+        verify(repository).getAllRecipes(null)
     }
 
     @Test
@@ -74,19 +77,19 @@ class HomeViewModelTest {
         // Given
         val category = "breakfast"
         val recipes = listOf(testRecipe)
-        whenever(repository.getAllRecipes()).thenReturn(flowOf(emptyList()))
-        whenever(repository.getRecipesByCategory(category)).thenReturn(flowOf(recipes))
+        whenever(repository.getAllRecipes(any())).thenReturn(flowOf(emptyList()))
+        whenever(repository.getRecipesByCategory(category, null)).thenReturn(flowOf(recipes))
 
         viewModel = HomeViewModel(repository)
         advanceUntilIdle()
 
         // When
-        viewModel.loadRecipesByCategory(category)
+        viewModel.loadRecipesByCategory(category, null)
         advanceUntilIdle()
 
         // Then
         assertEquals(recipes, viewModel.recipes.value)
-        verify(repository).getRecipesByCategory(category)
+        verify(repository).getRecipesByCategory(category, null)
     }
 
     @Test
@@ -94,37 +97,37 @@ class HomeViewModelTest {
         // Given
         val query = "Test"
         val recipes = listOf(testRecipe)
-        whenever(repository.getAllRecipes()).thenReturn(flowOf(emptyList()))
-        whenever(repository.searchRecipes(query)).thenReturn(flowOf(recipes))
+        whenever(repository.getAllRecipes(any())).thenReturn(flowOf(emptyList()))
+        whenever(repository.searchRecipes(query, null)).thenReturn(flowOf(recipes))
 
         viewModel = HomeViewModel(repository)
         advanceUntilIdle()
 
         // When
-        viewModel.searchRecipes(query)
+        viewModel.searchRecipes(query, null)
         advanceUntilIdle()
 
         // Then
         assertEquals(recipes, viewModel.recipes.value)
-        verify(repository).searchRecipes(query)
+        verify(repository).searchRecipes(query, null)
     }
 
     @Test
     fun `searchRecipes with blank query should load all recipes`() = runTest {
         // Given
         val recipes = listOf(testRecipe)
-        whenever(repository.getAllRecipes()).thenReturn(flowOf(recipes))
+        whenever(repository.getAllRecipes(any())).thenReturn(flowOf(recipes))
 
         viewModel = HomeViewModel(repository)
         advanceUntilIdle()
 
         // When
-        viewModel.searchRecipes("")
+        viewModel.searchRecipes("", null)
         advanceUntilIdle()
 
         // Then
         // getAllRecipes is called twice: in init and in searchRecipes
-        verify(repository).getAllRecipes()
+        verify(repository, times(2)).getAllRecipes(null)
     }
 
     @Test
@@ -132,22 +135,22 @@ class HomeViewModelTest {
         // Given
         val recipeId = 1L
         val isFavorite = true
-        whenever(repository.getAllRecipes()).thenReturn(flowOf(emptyList()))
+        whenever(repository.getAllRecipes(any())).thenReturn(flowOf(emptyList()))
 
         viewModel = HomeViewModel(repository)
         advanceUntilIdle()
 
         // When
-        viewModel.toggleFavorite(recipeId, isFavorite)
+        viewModel.toggleFavorite(userId, recipeId, isFavorite)
 
         // Then
-        verify(repository).toggleFavorite(recipeId, isFavorite)
+        verify(repository).toggleFavorite(userId, recipeId, isFavorite)
     }
 
     @Test
     fun `initial state should be empty list`() = runTest {
         // Given
-        whenever(repository.getAllRecipes()).thenReturn(flowOf(emptyList()))
+        whenever(repository.getAllRecipes(any())).thenReturn(flowOf(emptyList()))
 
         // When
         viewModel = HomeViewModel(repository)

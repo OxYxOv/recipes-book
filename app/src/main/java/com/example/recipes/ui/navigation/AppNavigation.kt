@@ -108,11 +108,15 @@ fun NavigationGraph(
         composable(Screen.AddRecipe.route) {
             AddRecipeScreen(onRecipeAdded = {
                 navController.popBackStack()
+            }, onAuthRequired = {
+                navController.navigate(Screen.Profile.route)
             })
         }
 
         composable(Screen.Profile.route) {
-            ProfileScreen()
+            ProfileScreen(onRecipeClick = { recipeId ->
+                navController.navigate(Screen.RecipeDetail.createRoute(recipeId))
+            })
         }
     }
 }

@@ -19,6 +19,7 @@ data class Recipe(
     val servings: Int = 1,
     val isFavorite: Boolean = false,
     val isLocal: Boolean = true,
+    val ownerId: String? = null,
     @SerializedName("remote_id")
     val remoteId: String? = null
 )

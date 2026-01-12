@@ -14,6 +14,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.mockito.Mock
 import org.mockito.MockitoAnnotations
+import org.mockito.kotlin.any
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 
@@ -29,6 +30,7 @@ class CatalogViewModelTest {
     private lateinit var repository: RecipeRepository
 
     private lateinit var viewModel: CatalogViewModel
+    private val userId = "user@test.com"
 
     private val testRecipe = Recipe(
         id = 1,
@@ -58,7 +60,7 @@ class CatalogViewModelTest {
     fun `init should load all recipes`() = runTest {
         // Given
         val recipes = listOf(testRecipe)
-        whenever(repository.getAllRecipes()).thenReturn(flowOf(recipes))
+        whenever(repository.getAllRecipes(any())).thenReturn(flowOf(recipes))
 
         // When
         viewModel = CatalogViewModel(repository)
@@ -66,13 +68,13 @@ class CatalogViewModelTest {
 
         // Then
         assertEquals(recipes, viewModel.recipes.value)
-        verify(repository).getAllRecipes()
+        verify(repository).getAllRecipes(null)
     }
 
     @Test
     fun `init should start with empty list`() = runTest {
         // Given
-        whenever(repository.getAllRecipes()).thenReturn(flowOf(emptyList()))
+        whenever(repository.getAllRecipes(any())).thenReturn(flowOf(emptyList()))
 
         // When
         viewModel = CatalogViewModel(repository)
@@ -80,7 +82,7 @@ class CatalogViewModelTest {
 
         // Then
         assertTrue(viewModel.recipes.value.isEmpty())
-        verify(repository).getAllRecipes()
+        verify(repository).getAllRecipes(null)
     }
 
     @Test
@@ -88,16 +90,16 @@ class CatalogViewModelTest {
         // Given
         val recipeId = 1L
         val isFavorite = true
-        whenever(repository.getAllRecipes()).thenReturn(flowOf(emptyList()))
+        whenever(repository.getAllRecipes(any())).thenReturn(flowOf(emptyList()))
 
         viewModel = CatalogViewModel(repository)
         advanceUntilIdle()
 
         // When
-        viewModel.toggleFavorite(recipeId, isFavorite)
+        viewModel.toggleFavorite(userId, recipeId, isFavorite)
 
         // Then
-        verify(repository).toggleFavorite(recipeId, isFavorite)
+        verify(repository).toggleFavorite(userId, recipeId, isFavorite)
     }
 
     @Test
@@ -105,7 +107,7 @@ class CatalogViewModelTest {
         // Given
         val recipes1 = listOf(testRecipe)
         val recipes2 = listOf(testRecipe, testRecipe.copy(id = 2, name = "Recipe 2"))
-        whenever(repository.getAllRecipes()).thenReturn(flowOf(recipes1))
+        whenever(repository.getAllRecipes(any())).thenReturn(flowOf(recipes1))
 
         viewModel = CatalogViewModel(repository)
         advanceUntilIdle()
@@ -114,7 +116,7 @@ class CatalogViewModelTest {
         assertEquals(recipes1, viewModel.recipes.value)
 
         // Update mock for second emission
-        whenever(repository.getAllRecipes()).thenReturn(flowOf(recipes2))
+        whenever(repository.getAllRecipes(any())).thenReturn(flowOf(recipes2))
         
         // Create new view model to trigger reload
         viewModel = CatalogViewModel(repository)

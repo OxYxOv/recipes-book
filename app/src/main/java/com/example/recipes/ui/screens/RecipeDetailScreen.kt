@@ -16,11 +16,16 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.example.recipes.data.local.RecipeDatabase
+import com.example.recipes.data.local.UserPreferencesManager
+import com.example.recipes.data.model.DEFAULT_RECIPE_IMAGE
+import com.example.recipes.data.model.Recipe
 import com.example.recipes.data.remote.RetrofitClient
 import com.example.recipes.data.repository.RecipeRepository
 import com.example.recipes.ui.components.AnimatedFavoriteButton
@@ -31,19 +36,29 @@ import kotlinx.coroutines.launch
 @Composable
 fun RecipeDetailScreen(
     recipeId: Long,
-    onNavigateBack: () -> Unit,
-    viewModel: RecipeDetailViewModel = viewModel(
+    onNavigateBack: () -> Unit
+) {
+    val preferencesManager = remember { UserPreferencesManager(LocalContext.current) }
+    val userEmailState by preferencesManager.userEmail.collectAsState(initial = null)
+    val isLoggedIn by preferencesManager.isLoggedIn.collectAsState(initial = false)
+    val viewModel: RecipeDetailViewModel = viewModel(
+        key = "recipe-$recipeId-${userEmailState ?: "guest"}",
         factory = RecipeDetailViewModelFactory(
             recipeId,
             RecipeRepository(
                 RecipeDatabase.getDatabase(LocalContext.current).recipeDao(),
                 RetrofitClient.recipeApiService
-            )
+            ),
+            userEmailState
         )
     )
-) {
     val recipe by viewModel.recipe.collectAsState()
+    val userEmail = userEmailState
     val scope = rememberCoroutineScope()
+    var showAuthDialog by remember { mutableStateOf(false) }
+    var showDeleteDialog by remember { mutableStateOf(false) }
+    var showEditDialog by remember { mutableStateOf(false) }
+    var editableRecipe by remember { mutableStateOf<Recipe?>(null) }
 
     Scaffold(
         topBar = {
@@ -59,11 +74,23 @@ fun RecipeDetailScreen(
                         AnimatedFavoriteButton(
                             isFavorite = r.isFavorite,
                             onClick = {
-                                scope.launch {
-                                    viewModel.toggleFavorite(!r.isFavorite)
+                                if (!isLoggedIn || userEmail.isNullOrBlank()) {
+                                    showAuthDialog = true
+                                } else {
+                                    scope.launch {
+                                        viewModel.toggleFavorite(!r.isFavorite)
+                                    }
                                 }
                             }
                         )
+                        if (r.ownerId != null && r.ownerId == userEmail) {
+                            IconButton(onClick = { showEditDialog = true; editableRecipe = r }) {
+                                Icon(Icons.Default.Edit, contentDescription = "Редактировать")
+                            }
+                            IconButton(onClick = { showDeleteDialog = true }) {
+                                Icon(Icons.Default.Delete, contentDescription = "Удалить")
+                            }
+                        }
                     }
                 }
             )
@@ -78,31 +105,14 @@ fun RecipeDetailScreen(
             ) {
                 // Recipe image
                 Box {
-                    if (r.imageUrl != null) {
-                        AsyncImage(
-                            model = r.imageUrl,
-                            contentDescription = r.name,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(250.dp),
-                            contentScale = ContentScale.Crop
-                        )
-                    } else {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(250.dp)
-                                .background(MaterialTheme.colorScheme.primaryContainer),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Restaurant,
-                                contentDescription = null,
-                                modifier = Modifier.size(100.dp),
-                                tint = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.3f)
-                            )
-                        }
-                    }
+                    AsyncImage(
+                        model = r.imageUrl ?: DEFAULT_RECIPE_IMAGE,
+                        contentDescription = r.name,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(250.dp),
+                        contentScale = ContentScale.Crop
+                    )
                 }
 
                 // Recipe info
@@ -201,6 +211,98 @@ fun RecipeDetailScreen(
         ) {
             CircularProgressIndicator()
         }
+    }
+
+    if (showAuthDialog) {
+        AlertDialog(
+            onDismissRequest = { showAuthDialog = false },
+            confirmButton = {
+                TextButton(onClick = { showAuthDialog = false }) {
+                    Text("Понятно")
+                }
+            },
+            title = { Text("Необходим вход") },
+            text = { Text("Авторизуйтесь, чтобы добавлять рецепт в избранное.") }
+        )
+    }
+
+    if (showDeleteDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteDialog = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    showDeleteDialog = false
+                    scope.launch {
+                        val deleted = viewModel.deleteRecipe()
+                        if (deleted) onNavigateBack()
+                    }
+                }) {
+                    Text("Удалить")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteDialog = false }) { Text("Отмена") }
+            },
+            title = { Text("Удалить рецепт?") },
+            text = { Text("Это действие нельзя отменить.") }
+        )
+    }
+
+    if (showEditDialog && editableRecipe != null) {
+        val recipeToEdit = editableRecipe!!
+        var name by remember(recipeToEdit.id) { mutableStateOf(recipeToEdit.name) }
+        var description by remember(recipeToEdit.id) { mutableStateOf(recipeToEdit.description) }
+        var ingredients by remember(recipeToEdit.id) { mutableStateOf(recipeToEdit.ingredients) }
+        var instructions by remember(recipeToEdit.id) { mutableStateOf(recipeToEdit.instructions) }
+        var cookingTime by remember(recipeToEdit.id) { mutableStateOf(recipeToEdit.cookingTime.toString()) }
+        var servings by remember(recipeToEdit.id) { mutableStateOf(recipeToEdit.servings.toString()) }
+
+        AlertDialog(
+            onDismissRequest = { showEditDialog = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    showEditDialog = false
+                    scope.launch {
+                        viewModel.updateRecipe(
+                            recipeToEdit.copy(
+                                name = name,
+                                description = description,
+                                ingredients = ingredients,
+                                instructions = instructions,
+                                cookingTime = cookingTime.toIntOrNull() ?: recipeToEdit.cookingTime,
+                                servings = servings.toIntOrNull() ?: recipeToEdit.servings
+                            )
+                        )
+                    }
+                }) {
+                    Text("Сохранить")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showEditDialog = false }) { Text("Отмена") }
+            },
+            title = { Text("Редактирование рецепта") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Название") })
+                    OutlinedTextField(value = description, onValueChange = { description = it }, label = { Text("Описание") })
+                    OutlinedTextField(value = ingredients, onValueChange = { ingredients = it }, label = { Text("Ингредиенты") })
+                    OutlinedTextField(value = instructions, onValueChange = { instructions = it }, label = { Text("Инструкции") })
+                    OutlinedTextField(
+                        value = cookingTime,
+                        onValueChange = { cookingTime = it.filter { c -> c.isDigit() } },
+                        label = { Text("Время (мин)") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                    )
+                    OutlinedTextField(
+                        value = servings,
+                        onValueChange = { servings = it.filter { c -> c.isDigit() } },
+                        label = { Text("Порции") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                    )
+                }
+            }
+        )
     }
 }
 
