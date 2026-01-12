@@ -36,11 +36,17 @@ class RecipeDetailViewModel(
 
     suspend fun deleteRecipe(): Boolean {
         val currentRecipe = _recipe.value ?: return false
-        if (currentRecipe.ownerId != null && currentRecipe.ownerId == userId) {
-            repository.deleteRecipe(currentRecipe)
-            return true
+        return when {
+            currentRecipe.ownerId != null && currentRecipe.ownerId == userId -> {
+                repository.deleteRecipe(currentRecipe)
+                true
+            }
+            currentRecipe.ownerId == null && !userId.isNullOrBlank() -> {
+                repository.hideRecipe(userId, currentRecipe.id)
+                true
+            }
+            else -> false
         }
-        return false
     }
 
     suspend fun updateRecipe(updated: Recipe) {

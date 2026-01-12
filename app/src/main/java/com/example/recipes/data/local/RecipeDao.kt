@@ -2,6 +2,7 @@ package com.example.recipes.data.local
 
 import androidx.room.*
 import com.example.recipes.data.model.FavoriteRecipe
+import com.example.recipes.data.model.HiddenRecipe
 import com.example.recipes.data.model.Recipe
 import kotlinx.coroutines.flow.Flow
 
@@ -10,7 +11,8 @@ interface RecipeDao {
     @Query(
         """
         SELECT * FROM recipes 
-        WHERE ownerId IS NULL OR (:userId IS NOT NULL AND ownerId = :userId) 
+        WHERE (ownerId IS NULL OR (:userId IS NOT NULL AND ownerId = :userId))
+        AND (:userId IS NULL OR id NOT IN (SELECT recipeId FROM hidden_recipes WHERE userId = :userId))
         ORDER BY id DESC
         """
     )
@@ -20,6 +22,7 @@ interface RecipeDao {
         """
         SELECT * FROM recipes 
         WHERE id = :id AND (ownerId IS NULL OR (:userId IS NOT NULL AND ownerId = :userId))
+        AND (:userId IS NULL OR id NOT IN (SELECT recipeId FROM hidden_recipes WHERE userId = :userId))
         """
     )
     suspend fun getRecipeById(id: Long, userId: String?): Recipe?
@@ -29,6 +32,7 @@ interface RecipeDao {
         SELECT * FROM recipes 
         WHERE category = :category 
         AND (ownerId IS NULL OR (:userId IS NOT NULL AND ownerId = :userId))
+        AND (:userId IS NULL OR id NOT IN (SELECT recipeId FROM hidden_recipes WHERE userId = :userId))
         ORDER BY id DESC
         """
     )
@@ -40,6 +44,7 @@ interface RecipeDao {
         INNER JOIN favorite_recipes ON recipes.id = favorite_recipes.recipeId
         WHERE favorite_recipes.userId = :userId
         AND (recipes.ownerId IS NULL OR recipes.ownerId = :userId)
+        AND recipes.id NOT IN (SELECT recipeId FROM hidden_recipes WHERE userId = :userId)
         ORDER BY recipes.id DESC
         """
     )
@@ -50,6 +55,7 @@ interface RecipeDao {
         SELECT * FROM recipes 
         WHERE (name LIKE '%' || :query || '%' OR description LIKE '%' || :query || '%')
         AND (ownerId IS NULL OR (:userId IS NOT NULL AND ownerId = :userId))
+        AND (:userId IS NULL OR id NOT IN (SELECT recipeId FROM hidden_recipes WHERE userId = :userId))
         ORDER BY id DESC
         """
     )
@@ -75,4 +81,21 @@ interface RecipeDao {
 
     @Query("SELECT * FROM recipes WHERE ownerId = :userId ORDER BY id DESC")
     fun getUserRecipes(userId: String): Flow<List<Recipe>>
+
+    @Query(
+        """
+        SELECT COUNT(*) > 0 FROM recipes 
+        WHERE (ownerId IS NULL OR (:userId IS NOT NULL AND ownerId = :userId))
+        AND (:userId IS NULL OR NOT EXISTS (
+            SELECT 1 FROM hidden_recipes WHERE userId = :userId AND recipeId = recipes.id
+        ))
+        """
+    )
+    suspend fun hasRecipes(userId: String?): Boolean
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun hideRecipe(hiddenRecipe: HiddenRecipe)
+
+    @Query("DELETE FROM hidden_recipes WHERE userId = :userId AND recipeId = :recipeId")
+    suspend fun unhideRecipe(userId: String, recipeId: Long)
 }

@@ -10,9 +10,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.recipes.data.local.UserPreferencesManager
@@ -204,10 +206,15 @@ fun LoginRegisterView(onLogin: (String, String) -> Unit) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     val emailFocusRequester = remember { androidx.compose.ui.focus.FocusRequester() }
+    var attempted by remember { mutableStateOf(false) }
+    val keyboardController = LocalSoftwareKeyboardController.current
 
     val emailError = email.isBlank() || !android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()
     val passwordError = password.length < 4
     val usernameError = !isLogin && username.isBlank()
+    val showEmailError = attempted && emailError
+    val showPasswordError = attempted && passwordError
+    val showUsernameError = attempted && usernameError
 
     Column(
         modifier = Modifier
@@ -228,8 +235,8 @@ fun LoginRegisterView(onLogin: (String, String) -> Unit) {
                 onValueChange = { username = it },
                 label = { Text("Имя пользователя") },
                 placeholder = { Text("Укажите имя") },
-                isError = usernameError,
-                supportingText = { if (usernameError) Text("Имя обязательно") },
+                isError = showUsernameError,
+                supportingText = { if (showUsernameError) Text("Имя обязательно") },
                 modifier = Modifier
                     .fillMaxWidth(),
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
@@ -243,15 +250,21 @@ fun LoginRegisterView(onLogin: (String, String) -> Unit) {
             onValueChange = { email = it },
             label = { Text("Email") },
             placeholder = { Text("example@mail.com") },
-            isError = emailError,
-            supportingText = { if (emailError) Text("Введите корректный email") },
+            isError = showEmailError,
+            supportingText = { if (showEmailError) Text("Введите корректный email") },
             modifier = Modifier
                 .fillMaxWidth()
                 .focusRequester(emailFocusRequester),
-            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+            keyboardOptions = KeyboardOptions(
+                imeAction = ImeAction.Next,
+                keyboardType = KeyboardType.Email
+            ),
             leadingIcon = { Icon(Icons.Default.Email, contentDescription = null) }
         )
-        LaunchedEffect(isLogin) { emailFocusRequester.requestFocus() }
+        LaunchedEffect(isLogin) {
+            emailFocusRequester.requestFocus()
+            keyboardController?.show()
+        }
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -260,11 +273,14 @@ fun LoginRegisterView(onLogin: (String, String) -> Unit) {
             onValueChange = { password = it },
             label = { Text("Пароль") },
             placeholder = { Text("Минимум 4 символа") },
-            isError = passwordError,
-            supportingText = { if (passwordError) Text("Пароль слишком короткий") },
+            isError = showPasswordError,
+            supportingText = { if (showPasswordError) Text("Пароль слишком короткий") },
             modifier = Modifier.fillMaxWidth(),
             visualTransformation = PasswordVisualTransformation(),
-            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+            keyboardOptions = KeyboardOptions(
+                imeAction = ImeAction.Done,
+                keyboardType = KeyboardType.Password
+            ),
             leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) }
         )
 
@@ -272,13 +288,15 @@ fun LoginRegisterView(onLogin: (String, String) -> Unit) {
 
         Button(
             onClick = {
+                attempted = true
+                if (emailError || passwordError || usernameError) return@Button
                 onLogin(
                     if (isLogin) email.substringBefore("@") else username,
                     email
                 )
             },
             modifier = Modifier.fillMaxWidth(),
-            enabled = !emailError && !passwordError && (!isLogin || !usernameError)
+            enabled = true
         ) {
             Text(if (isLogin) "Войти" else "Зарегистрироваться")
         }
@@ -286,7 +304,10 @@ fun LoginRegisterView(onLogin: (String, String) -> Unit) {
         Spacer(modifier = Modifier.height(16.dp))
 
         TextButton(
-            onClick = { isLogin = !isLogin },
+            onClick = {
+                isLogin = !isLogin
+                attempted = false
+            },
             modifier = Modifier.fillMaxWidth()
         ) {
             Text(

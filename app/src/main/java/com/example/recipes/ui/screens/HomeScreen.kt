@@ -37,6 +37,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
@@ -75,12 +76,17 @@ fun HomeScreen(
         )
     }
     var selectedCategory by remember { mutableStateOf("all") }
+    val initialHighlightedCategory = remember(categories) {
+        categories.firstOrNull { it.id != "all" }?.id ?: "all"
+    }
+    var highlightedCategory by remember { mutableStateOf(initialHighlightedCategory) }
     var searchQuery by remember { mutableStateOf("") }
     val scope = rememberCoroutineScope()
     val focusManager = LocalFocusManager.current
     val focusRequester = remember { FocusRequester() }
     val listState = rememberLazyListState()
     val context = LocalContext.current
+    val keyboardController = LocalSoftwareKeyboardController.current
 
     val preferencesManager = remember { UserPreferencesManager(context) }
     val isLoggedIn by preferencesManager.isLoggedIn.collectAsState(initial = false)
@@ -96,14 +102,19 @@ fun HomeScreen(
             )
         )
     }
+    val categoryAnchors = remember(orderedRecipes) {
+        orderedRecipes.withIndex()
+            .groupBy({ it.value.category }, { it.index })
+            .mapValues { entry -> entry.value.minOrNull() ?: 0 }
+    }
     val firstVisibleCategory by remember {
         derivedStateOf {
-            orderedRecipes.getOrNull(listState.firstVisibleItemIndex)?.category ?: selectedCategory
+            orderedRecipes.getOrNull(listState.firstVisibleItemIndex)?.category ?: highlightedCategory
         }
     }
 
     LaunchedEffect(firstVisibleCategory) {
-        selectedCategory = firstVisibleCategory
+        highlightedCategory = firstVisibleCategory
     }
 
     LaunchedEffect(userEmail, selectedCategory) {
@@ -154,7 +165,10 @@ fun HomeScreen(
                         unfocusedContainerColor = MaterialTheme.colorScheme.surface
                     )
                 )
-                LaunchedEffect(Unit) { focusRequester.requestFocus() }
+                LaunchedEffect(Unit) {
+                    focusRequester.requestFocus()
+                    keyboardController?.show()
+                }
             }
         }
 
@@ -167,9 +181,16 @@ fun HomeScreen(
         ) {
             items(categories) { category ->
                 FilterChip(
-                    selected = selectedCategory == category.id,
+                    selected = highlightedCategory == category.id,
                     onClick = {
                         selectedCategory = category.id
+                        if (category.id != "all") {
+                            val targetIndex = categoryAnchors[category.id]
+                            if (targetIndex != null && targetIndex in orderedRecipes.indices) {
+                                scope.launch { listState.animateScrollToItem(targetIndex, scrollOffset = 0) }
+                            }
+                        }
+                        highlightedCategory = category.id
                         if (category.id == "all") {
                             viewModel.loadAllRecipes(userEmail)
                         } else {
