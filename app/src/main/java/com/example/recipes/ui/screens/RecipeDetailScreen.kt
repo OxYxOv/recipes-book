@@ -38,7 +38,9 @@ fun RecipeDetailScreen(
     recipeId: Long,
     onNavigateBack: () -> Unit
 ) {
-    val preferencesManager = remember { UserPreferencesManager(LocalContext.current) }
+    val context = LocalContext.current
+
+    val preferencesManager = remember { UserPreferencesManager(context) }
     val userEmailState by preferencesManager.userEmail.collectAsState(initial = null)
     val isLoggedIn by preferencesManager.isLoggedIn.collectAsState(initial = false)
     val viewModel: RecipeDetailViewModel = viewModel(

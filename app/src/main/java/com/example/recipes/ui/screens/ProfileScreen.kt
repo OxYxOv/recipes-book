@@ -13,7 +13,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardOptions
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.recipes.data.local.UserPreferencesManager
@@ -24,6 +23,8 @@ import com.example.recipes.ui.components.RecipeCard
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import android.util.Patterns
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.focus.focusRequester
 
 @Composable
 fun ProfileScreen(onRecipeClick: (Long) -> Unit = {}) {

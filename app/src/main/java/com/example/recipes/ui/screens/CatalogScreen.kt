@@ -33,7 +33,9 @@ fun CatalogScreen(
 ) {
     val recipes by viewModel.recipes.collectAsState()
     val scope = rememberCoroutineScope()
-    val preferencesManager = remember { UserPreferencesManager(LocalContext.current) }
+    val context = LocalContext.current
+
+    val preferencesManager = remember { UserPreferencesManager(context) }
     val isLoggedIn by preferencesManager.isLoggedIn.collectAsState(initial = false)
     val userEmail by preferencesManager.userEmail.collectAsState(initial = null)
     var showAuthDialog by remember { mutableStateOf(false) }

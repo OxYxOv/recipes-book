@@ -21,6 +21,7 @@ import com.example.recipes.data.repository.RecipeRepository
 import kotlinx.coroutines.launch
 import java.util.Calendar
 import android.app.TimePickerDialog
+import androidx.compose.ui.focus.focusRequester
 
 private const val COOKING_TIME_MAX_LENGTH = 4
 private const val SERVINGS_MAX_LENGTH = 3
@@ -49,11 +50,11 @@ fun AddRecipeScreen(
     var difficulty by remember { mutableStateOf("easy") }
     var imageUrl by remember { mutableStateOf("") }
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
     val focusRequester = remember { androidx.compose.ui.focus.FocusRequester() }
-    val preferencesManager = remember { UserPreferencesManager(LocalContext.current) }
+    val preferencesManager = remember { UserPreferencesManager(context) }
     val isLoggedIn by preferencesManager.isLoggedIn.collectAsState(initial = false)
     val userEmail by preferencesManager.userEmail.collectAsState(initial = null)
-    val context = LocalContext.current
     var showTimePicker by remember { mutableStateOf(false) }
     var showAuthDialog by remember { mutableStateOf(false) }
 

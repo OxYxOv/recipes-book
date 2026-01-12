@@ -39,9 +39,9 @@ class MainActivity : ComponentActivity() {
         lifecycleScope.launch {
             val db = RecipeDatabase.getDatabase(applicationContext)
             val dao = db.recipeDao()
-
+            val userId = "0"
             // Check if database is empty
-            val hasRecipes = dao.getAllRecipes().first().isNotEmpty()
+            val hasRecipes = dao.getAllRecipes(userId).first().isNotEmpty()
 
             if (!hasRecipes) {
                 // Add sample recipes
