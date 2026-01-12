@@ -9,7 +9,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.lifecycleScope
 import com.example.recipes.data.local.RecipeDatabase
-import com.example.recipes.data.model.DEFAULT_RECIPE_IMAGE
+import com.example.recipes.data.local.UserPreferencesManager
 import com.example.recipes.data.model.Recipe
 import com.example.recipes.ui.navigation.AppNavigation
 import com.example.recipes.ui.theme.RecipesBookTheme
@@ -39,7 +39,7 @@ class MainActivity : ComponentActivity() {
         lifecycleScope.launch {
             val db = RecipeDatabase.getDatabase(applicationContext)
             val dao = db.recipeDao()
-            val userId = "0"
+            val userId = UserPreferencesManager(applicationContext).userEmail.first()
             // Check if database is empty
             val hasRecipes = dao.getAllRecipes(userId).first().isNotEmpty()
 
@@ -55,7 +55,7 @@ class MainActivity : ComponentActivity() {
                         cookingTime = 15,
                         difficulty = "easy",
                         servings = 2,
-                        imageUrl = DEFAULT_RECIPE_IMAGE
+                        imageUrl = "https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?auto=format&fit=crop&w=1200&q=60"
                     ),
                     Recipe(
                         name = "Борщ",
@@ -66,7 +66,7 @@ class MainActivity : ComponentActivity() {
                         cookingTime = 120,
                         difficulty = "medium",
                         servings = 6,
-                        imageUrl = DEFAULT_RECIPE_IMAGE
+                        imageUrl = "https://images.unsplash.com/photo-1604908176997-1251882d99f1?auto=format&fit=crop&w=1200&q=60"
                     ),
                     Recipe(
                         name = "Куриные котлеты",
@@ -77,7 +77,7 @@ class MainActivity : ComponentActivity() {
                         cookingTime = 40,
                         difficulty = "easy",
                         servings = 4,
-                        imageUrl = DEFAULT_RECIPE_IMAGE
+                        imageUrl = "https://images.unsplash.com/photo-1604908177035-0ac1e435cd1d?auto=format&fit=crop&w=1200&q=60"
                     ),
                     Recipe(
                         name = "Шоколадный кекс",
@@ -88,7 +88,7 @@ class MainActivity : ComponentActivity() {
                         cookingTime = 50,
                         difficulty = "easy",
                         servings = 8,
-                        imageUrl = DEFAULT_RECIPE_IMAGE
+                        imageUrl = "https://images.unsplash.com/photo-1599785209796-86e3b8329fcb?auto=format&fit=crop&w=1200&q=60"
                     ),
                     Recipe(
                         name = "Цезарь салат",
@@ -99,7 +99,7 @@ class MainActivity : ComponentActivity() {
                         cookingTime = 20,
                         difficulty = "easy",
                         servings = 2,
-                        imageUrl = DEFAULT_RECIPE_IMAGE
+                        imageUrl = "https://images.unsplash.com/photo-1551183053-bf91a1d81141?auto=format&fit=crop&w=1200&q=60"
                     ),
                     Recipe(
                         name = "Лазанья",
@@ -110,7 +110,7 @@ class MainActivity : ComponentActivity() {
                         cookingTime = 90,
                         difficulty = "hard",
                         servings = 6,
-                        imageUrl = DEFAULT_RECIPE_IMAGE
+                        imageUrl = "https://images.unsplash.com/photo-1612874472278-5c1f9f0d4d5d?auto=format&fit=crop&w=1200&q=60"
                     )
                 )
 

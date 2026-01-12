@@ -89,8 +89,12 @@ fun RecipeDetailScreen(
                             IconButton(onClick = { showEditDialog = true; editableRecipe = r }) {
                                 Icon(Icons.Default.Edit, contentDescription = "Редактировать")
                             }
+                        }
+                        if (isLoggedIn && !userEmail.isNullOrBlank() &&
+                            (r.ownerId == null || r.ownerId == userEmail)
+                        ) {
                             IconButton(onClick = { showDeleteDialog = true }) {
-                                Icon(Icons.Default.Delete, contentDescription = "Удалить")
+                                Icon(Icons.Default.Delete, contentDescription = "Удалить или скрыть рецепт")
                             }
                         }
                     }
@@ -229,6 +233,7 @@ fun RecipeDetailScreen(
     }
 
     if (showDeleteDialog) {
+        val hideOnly = recipe?.ownerId == null
         AlertDialog(
             onDismissRequest = { showDeleteDialog = false },
             confirmButton = {
@@ -239,14 +244,19 @@ fun RecipeDetailScreen(
                         if (deleted) onNavigateBack()
                     }
                 }) {
-                    Text("Удалить")
+                    Text(if (hideOnly) "Скрыть" else "Удалить")
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showDeleteDialog = false }) { Text("Отмена") }
             },
-            title = { Text("Удалить рецепт?") },
-            text = { Text("Это действие нельзя отменить.") }
+            title = { Text(if (hideOnly) "Скрыть рецепт?" else "Удалить рецепт?") },
+            text = {
+                Text(
+                    if (hideOnly) "Рецепт будет скрыт из вашего каталога, но останется доступным для других пользователей."
+                    else "Это действие нельзя отменить."
+                )
+            }
         )
     }
 
