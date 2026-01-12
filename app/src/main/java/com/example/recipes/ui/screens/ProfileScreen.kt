@@ -13,6 +13,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.recipes.data.local.UserPreferencesManager
@@ -204,11 +205,20 @@ fun LoginRegisterView(onLogin: (String, String) -> Unit) {
     var username by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    var attemptedSubmit by remember { mutableStateOf(false) }
     val emailFocusRequester = remember { androidx.compose.ui.focus.FocusRequester() }
 
-    val emailError = email.isBlank() || !android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()
-    val passwordError = password.length < 4
-    val usernameError = !isLogin && username.isBlank()
+    // Helper function to check if the form is valid
+    fun isFormValid(): Boolean {
+        val isEmailValid = email.isNotBlank() && android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()
+        val isPasswordValid = password.length >= 4
+        val isUsernameValid = isLogin || username.isNotBlank()
+        return isEmailValid && isPasswordValid && isUsernameValid
+    }
+
+    val emailError = attemptedSubmit && (email.isBlank() || !android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches())
+    val passwordError = attemptedSubmit && password.length < 4
+    val usernameError = attemptedSubmit && !isLogin && username.isBlank()
 
     Column(
         modifier = Modifier
@@ -228,13 +238,14 @@ fun LoginRegisterView(onLogin: (String, String) -> Unit) {
                 value = username,
                 onValueChange = { username = it },
                 label = { Text("Имя пользователя") },
-                placeholder = { Text("Укажите имя") },
+                placeholder = { Text("Ваше имя") },
                 isError = usernameError,
-                supportingText = { if (usernameError) Text("Имя обязательно") },
+                supportingText = { if (usernameError) Text("Имя обязательно") else Text("Как к вам обращаться?") },
                 modifier = Modifier
                     .fillMaxWidth(),
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                leadingIcon = { Icon(Icons.Default.Person, contentDescription = null) }
+                leadingIcon = { Icon(Icons.Default.Person, contentDescription = "Имя пользователя") },
+                singleLine = true
             )
             Spacer(modifier = Modifier.height(16.dp))
         }
@@ -243,14 +254,18 @@ fun LoginRegisterView(onLogin: (String, String) -> Unit) {
             value = email,
             onValueChange = { email = it },
             label = { Text("Email") },
-            placeholder = { Text("example@mail.com") },
+            placeholder = { Text("your@email.com") },
             isError = emailError,
-            supportingText = { if (emailError) Text("Введите корректный email") },
+            supportingText = { if (emailError) Text("Введите корректный email") else Text("Используйте действующий email адрес") },
             modifier = Modifier
                 .fillMaxWidth()
                 .focusRequester(emailFocusRequester),
-            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-            leadingIcon = { Icon(Icons.Default.Email, contentDescription = null) }
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Email,
+                imeAction = ImeAction.Next
+            ),
+            leadingIcon = { Icon(Icons.Default.Email, contentDescription = "Email") },
+            singleLine = true
         )
         LaunchedEffect(isLogin) { emailFocusRequester.requestFocus() }
 
@@ -262,24 +277,30 @@ fun LoginRegisterView(onLogin: (String, String) -> Unit) {
             label = { Text("Пароль") },
             placeholder = { Text("Минимум 4 символа") },
             isError = passwordError,
-            supportingText = { if (passwordError) Text("Пароль слишком короткий") },
+            supportingText = { if (passwordError) Text("Пароль слишком короткий (минимум 4 символа)") else Text("Введите надежный пароль") },
             modifier = Modifier.fillMaxWidth(),
             visualTransformation = PasswordVisualTransformation(),
-            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-            leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) }
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Password,
+                imeAction = ImeAction.Done
+            ),
+            leadingIcon = { Icon(Icons.Default.Lock, contentDescription = "Пароль") },
+            singleLine = true
         )
 
         Spacer(modifier = Modifier.height(24.dp))
 
         Button(
             onClick = {
-                onLogin(
-                    if (isLogin) email.substringBefore("@") else username,
-                    email
-                )
+                attemptedSubmit = true
+                if (isFormValid()) {
+                    onLogin(
+                        if (isLogin) email.substringBefore("@") else username,
+                        email
+                    )
+                }
             },
-            modifier = Modifier.fillMaxWidth(),
-            enabled = !emailError && !passwordError && (!isLogin || !usernameError)
+            modifier = Modifier.fillMaxWidth()
         ) {
             Text(if (isLogin) "Войти" else "Зарегистрироваться")
         }
@@ -287,7 +308,10 @@ fun LoginRegisterView(onLogin: (String, String) -> Unit) {
         Spacer(modifier = Modifier.height(16.dp))
 
         TextButton(
-            onClick = { isLogin = !isLogin },
+            onClick = { 
+                isLogin = !isLogin
+                attemptedSubmit = false  // Reset validation when switching modes
+            },
             modifier = Modifier.fillMaxWidth()
         ) {
             Text(
