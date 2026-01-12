@@ -23,7 +23,6 @@ import java.util.Calendar
 import android.app.TimePickerDialog
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 
 private const val COOKING_TIME_MAX_LENGTH = 4
 private const val SERVINGS_MAX_LENGTH = 3
@@ -59,8 +58,6 @@ fun AddRecipeScreen(
     val userEmail by preferencesManager.userEmail.collectAsState(initial = null)
     var showTimePicker by remember { mutableStateOf(false) }
     var showAuthDialog by remember { mutableStateOf(false) }
-    var attemptedSave by remember { mutableStateOf(false) }
-    val keyboardController = LocalSoftwareKeyboardController.current
 
     LaunchedEffect(isLoggedIn, userEmail) {
         showAuthDialog = !isLoggedIn || userEmail.isNullOrBlank()
@@ -129,17 +126,14 @@ fun AddRecipeScreen(
                 onValueChange = { name = it },
                 label = { Text("Название рецепта") },
                 placeholder = { Text("Например, Паста Карбонара") },
-                isError = attemptedSave && nameError,
-                supportingText = { if (attemptedSave && nameError) Text("Название обязательно") },
+                isError = nameError,
+                supportingText = { if (nameError) Text("Название обязательно") },
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
                 modifier = Modifier
                     .fillMaxWidth()
                     .focusRequester(focusRequester)
             )
-            LaunchedEffect(Unit) {
-                focusRequester.requestFocus()
-                keyboardController?.show()
-            }
+            LaunchedEffect(Unit) { focusRequester.requestFocus() }
 
             Spacer(modifier = Modifier.height(16.dp))
 
@@ -148,8 +142,8 @@ fun AddRecipeScreen(
                 onValueChange = { description = it },
                 label = { Text("Описание") },
                 placeholder = { Text("Кратко опишите блюдо") },
-                isError = attemptedSave && descError,
-                supportingText = { if (attemptedSave && descError) Text("Добавьте описание") },
+                isError = descError,
+                supportingText = { if (descError) Text("Добавьте описание") },
                 modifier = Modifier.fillMaxWidth(),
                 minLines = 3
             )
@@ -161,8 +155,8 @@ fun AddRecipeScreen(
                 onValueChange = { ingredients = it },
                 label = { Text("Ингредиенты (по одному на строку)") },
                 placeholder = { Text("Молоко, яйца, соль ...") },
-                isError = attemptedSave && ingredientError,
-                supportingText = { if (attemptedSave && ingredientError) Text("Введите ингредиенты") },
+                isError = ingredientError,
+                supportingText = { if (ingredientError) Text("Введите ингредиенты") },
                 modifier = Modifier.fillMaxWidth(),
                 minLines = 5
             )
@@ -174,8 +168,8 @@ fun AddRecipeScreen(
                 onValueChange = { instructions = it },
                 label = { Text("Инструкции приготовления") },
                 placeholder = { Text("Шаги приготовления по порядку") },
-                isError = attemptedSave && instructionError,
-                supportingText = { if (attemptedSave && instructionError) Text("Добавьте инструкции") },
+                isError = instructionError,
+                supportingText = { if (instructionError) Text("Добавьте инструкции") },
                 modifier = Modifier.fillMaxWidth(),
                 minLines = 5
             )
@@ -193,8 +187,8 @@ fun AddRecipeScreen(
                     },
                     label = { Text("Время (мин)") },
                     placeholder = { Text("Например, 30") },
-                    isError = attemptedSave && cookingError,
-                    supportingText = { if (attemptedSave && cookingError) Text("Укажите время приготовления") },
+                    isError = cookingError,
+                    supportingText = { if (cookingError) Text("Укажите время приготовления") },
                     modifier = Modifier.weight(1f),
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Number,
@@ -214,8 +208,8 @@ fun AddRecipeScreen(
                     },
                     label = { Text("Порции") },
                     placeholder = { Text("Например, 2") },
-                    isError = attemptedSave && servingsError,
-                    supportingText = { if (attemptedSave && servingsError) Text("Укажите количество порций") },
+                    isError = servingsError,
+                    supportingText = { if (servingsError) Text("Укажите количество порций") },
                     modifier = Modifier.weight(1f),
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Number,
@@ -308,32 +302,31 @@ fun AddRecipeScreen(
 
             Button(
                 onClick = {
-                    attemptedSave = true
-                    if (!isLoggedIn || userEmail.isNullOrBlank()) {
+                    if (isLoggedIn && !userEmail.isNullOrBlank()) {
+                        scope.launch {
+                            viewModel.addRecipe(
+                                name = name,
+                                description = description,
+                                ingredients = ingredients,
+                                instructions = instructions,
+                                cookingTime = cookingTime.toIntOrNull() ?: 0,
+                                servings = servings.toIntOrNull() ?: 1,
+                                category = category,
+                                difficulty = difficulty,
+                                imageUrl = imageUrl.ifBlank { null },
+                                ownerId = userEmail!!
+                            )
+                            onRecipeAdded()
+                        }
+                    } else {
                         onAuthRequired()
-                        return@Button
-                    }
-                    if (nameError || descError || ingredientError || instructionError || cookingError || servingsError) {
-                        return@Button
-                    }
-                    scope.launch {
-                        viewModel.addRecipe(
-                            name = name,
-                            description = description,
-                            ingredients = ingredients,
-                            instructions = instructions,
-                            cookingTime = cookingTime.toIntOrNull() ?: 0,
-                            servings = servings.toIntOrNull() ?: 1,
-                            category = category,
-                            difficulty = difficulty,
-                            imageUrl = imageUrl.ifBlank { null },
-                            ownerId = userEmail!!
-                        )
-                        onRecipeAdded()
                     }
                 },
                 modifier = Modifier.fillMaxWidth(),
-                enabled = isLoggedIn && !userEmail.isNullOrBlank()
+                enabled = isLoggedIn && !userEmail.isNullOrBlank() &&
+                        name.isNotBlank() && description.isNotBlank() &&
+                        ingredients.isNotBlank() && instructions.isNotBlank() &&
+                        cookingTime.isNotBlank() && servings.isNotBlank()
             ) {
                 Text("Сохранить рецепт")
             }

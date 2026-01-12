@@ -3,7 +3,6 @@ package com.example.recipes.data.repository
 import com.example.recipes.data.local.RecipeDao
 import com.example.recipes.data.model.DEFAULT_RECIPE_IMAGE
 import com.example.recipes.data.model.FavoriteRecipe
-import com.example.recipes.data.model.HiddenRecipe
 import com.example.recipes.data.model.Recipe
 import com.example.recipes.data.remote.RecipeApiService
 import kotlinx.coroutines.flow.*
@@ -53,9 +52,6 @@ class RecipeRepository(
     suspend fun updateRecipe(recipe: Recipe) = recipeDao.updateRecipe(recipe)
 
     suspend fun deleteRecipe(recipe: Recipe) = recipeDao.deleteRecipe(recipe)
-
-    suspend fun hideRecipe(userId: String, id: Long) =
-        recipeDao.hideRecipe(HiddenRecipe(userId = userId, recipeId = id))
 
     suspend fun toggleFavorite(userId: String, id: Long, isFavorite: Boolean) {
         if (isFavorite) {

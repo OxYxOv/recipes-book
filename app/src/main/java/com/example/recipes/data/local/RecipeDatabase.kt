@@ -4,15 +4,12 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
-import androidx.room.migration.Migration
-import androidx.sqlite.db.SupportSQLiteDatabase
 import com.example.recipes.data.model.FavoriteRecipe
-import com.example.recipes.data.model.HiddenRecipe
 import com.example.recipes.data.model.Recipe
 
 @Database(
-    entities = [Recipe::class, FavoriteRecipe::class, HiddenRecipe::class],
-    version = 4,
+    entities = [Recipe::class, FavoriteRecipe::class],
+    version = 2,
     exportSchema = false
 )
 abstract class RecipeDatabase : RoomDatabase() {
@@ -21,42 +18,6 @@ abstract class RecipeDatabase : RoomDatabase() {
     companion object {
         @Volatile
         private var INSTANCE: RecipeDatabase? = null
-        private val MIGRATION_2_3 = object : Migration(2, 3) {
-            override fun migrate(database: SupportSQLiteDatabase) {
-                database.execSQL(
-                    """
-                    CREATE TABLE `hidden_recipes` (
-                        `userId` TEXT NOT NULL,
-                        `recipeId` INTEGER NOT NULL,
-                        PRIMARY KEY(`userId`, `recipeId`)
-                    )
-                    """.trimIndent()
-                )
-            }
-        }
-        // Normalize the hidden_recipes table created in v3 to include the foreign key constraint
-        private val MIGRATION_3_4 = object : Migration(3, 4) {
-            override fun migrate(database: SupportSQLiteDatabase) {
-                database.execSQL(
-                    """
-                    CREATE TABLE hidden_recipes_new (
-                        userId TEXT NOT NULL,
-                        recipeId INTEGER NOT NULL,
-                        PRIMARY KEY(userId, recipeId),
-                        FOREIGN KEY(recipeId) REFERENCES recipes(id) ON DELETE CASCADE
-                    )
-                    """.trimIndent()
-                )
-                database.execSQL(
-                    """
-                    INSERT OR IGNORE INTO hidden_recipes_new(userId, recipeId)
-                    SELECT userId, recipeId FROM hidden_recipes
-                    """.trimIndent()
-                )
-                database.execSQL("DROP TABLE hidden_recipes")
-                database.execSQL("ALTER TABLE hidden_recipes_new RENAME TO hidden_recipes")
-            }
-        }
 
         fun getDatabase(context: Context): RecipeDatabase {
             return INSTANCE ?: synchronized(this) {
@@ -65,7 +26,7 @@ abstract class RecipeDatabase : RoomDatabase() {
                     RecipeDatabase::class.java,
                     "recipe_database"
                 )
-                    .addMigrations(MIGRATION_2_3, MIGRATION_3_4)
+                    .fallbackToDestructiveMigration()
                     .build()
                 INSTANCE = instance
                 instance

@@ -89,13 +89,8 @@ fun RecipeDetailScreen(
                             IconButton(onClick = { showEditDialog = true; editableRecipe = r }) {
                                 Icon(Icons.Default.Edit, contentDescription = "Редактировать")
                             }
-                        }
-                        if (isLoggedIn && !userEmail.isNullOrBlank() &&
-                            (r.ownerId == null || r.ownerId == userEmail)
-                        ) {
-                            val deleteDescription = if (r.ownerId == null) "Скрыть рецепт" else "Удалить рецепт"
                             IconButton(onClick = { showDeleteDialog = true }) {
-                                Icon(Icons.Default.Delete, contentDescription = deleteDescription)
+                                Icon(Icons.Default.Delete, contentDescription = "Удалить")
                             }
                         }
                     }
@@ -234,7 +229,6 @@ fun RecipeDetailScreen(
     }
 
     if (showDeleteDialog) {
-        val hideOnly = recipe?.ownerId == null
         AlertDialog(
             onDismissRequest = { showDeleteDialog = false },
             confirmButton = {
@@ -245,19 +239,14 @@ fun RecipeDetailScreen(
                         if (deleted) onNavigateBack()
                     }
                 }) {
-                    Text(if (hideOnly) "Скрыть" else "Удалить")
+                    Text("Удалить")
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showDeleteDialog = false }) { Text("Отмена") }
             },
-            title = { Text(if (hideOnly) "Скрыть рецепт?" else "Удалить рецепт?") },
-            text = {
-                Text(
-                    if (hideOnly) "Рецепт будет скрыт из вашего каталога, но останется доступным для других пользователей."
-                    else "Это действие нельзя отменить."
-                )
-            }
+            title = { Text("Удалить рецепт?") },
+            text = { Text("Это действие нельзя отменить.") }
         )
     }
 
