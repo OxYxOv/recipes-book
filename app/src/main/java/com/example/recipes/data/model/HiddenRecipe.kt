@@ -15,7 +15,7 @@ import androidx.room.Index
             onDelete = ForeignKey.CASCADE
         )
     ],
-    indices = [Index("recipeId")]
+    indices = [Index("recipeId"), Index("userId")]
 )
 data class HiddenRecipe(
     val userId: String,
